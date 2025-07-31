@@ -1,0 +1,141 @@
+load IOI data (1000 samples)
+******* test 1 *******
+build index using R from ../trainedRs/gpt2-newmerge-red_bear-metric-euclidean-unit_size-32-search_steps-25-data_source-minipile-merge_thr-0.04-merge_start-20000-merge_interval-8000-max_steps-100000/R-gpt2-x4.post.pt
+whole space (d=768, var=11738.03): logit diff drop 3.81, io prob drop 0.325
+subspace 0 (d=128, var=1802.50): logit diff drop 0.41, io prob drop 0.028
+subspace 1 (d=128, var=2233.59): logit diff drop 0.41, io prob drop 0.028
+subspace 2 (d=96, var=1698.81): logit diff drop 0.23, io prob drop 0.016
+subspace 3 (d=96, var=1312.56): logit diff drop 0.25, io prob drop 0.017
+subspace 4 (d=64, var=955.47): logit diff drop 0.17, io prob drop 0.011
+subspace 5 (d=64, var=975.76): logit diff drop 0.14, io prob drop 0.010
+subspace 6 (d=64, var=902.36): logit diff drop 0.19, io prob drop 0.012
+subspace 7 (d=32, var=478.26): logit diff drop 0.08, io prob drop 0.005
+subspace 8 (d=32, var=447.32): logit diff drop 0.06, io prob drop 0.004
+subspace 9 (d=32, var=509.06): logit diff drop 0.06, io prob drop 0.004
+subspace 10 (d=32, var=422.35): logit diff drop 0.07, io prob drop 0.004
+draw figures..
+partition
+ [128, 128, 96, 96, 64, 64, 64, 32, 32, 32, 32]
+var
+ [1802.499267578125, 2233.59130859375, 1698.808837890625, 1312.556640625, 955.47265625, 975.7591552734375, 902.3572998046875, 478.2579345703125, 447.320556640625, 509.05780029296875, 422.3519287109375]
+effect
+ [0.4095805883407593, 0.41390812397003174, 0.22705332934856415, 0.2506355047225952, 0.16606846451759338, 0.13710109889507294, 0.18674378097057343, 0.075202077627182, 0.05789066478610039, 0.06392348557710648, 0.06670625507831573]
+gini coef test1 unnormed   0.3599396681536831
+figure saved
+gini coef test1 dimension   0.10396547447632269
+figure saved
+gini coef test1 variance   0.10902530713085216
+figure saved
+******* test 2 *******
+build index using R from ../trainedRs/gpt2-newmerge-red_bear-metric-euclidean-unit_size-32-search_steps-25-data_source-minipile-merge_thr-0.04-merge_start-20000-merge_interval-8000-max_steps-100000/R-gpt2-x6.post.pt
+whole space (d=768, var=13848.94): logit diff drop 4.81, io prob drop 0.360
+subspace 0 (d=192, var=3589.86): logit diff drop 1.30, io prob drop 0.085
+subspace 1 (d=128, var=2321.45): logit diff drop 0.88, io prob drop 0.052
+subspace 2 (d=64, var=1133.64): logit diff drop 0.30, io prob drop 0.018
+subspace 3 (d=64, var=1169.61): logit diff drop 0.44, io prob drop 0.027
+subspace 4 (d=64, var=1081.40): logit diff drop 0.61, io prob drop 0.041
+subspace 5 (d=64, var=1026.14): logit diff drop 0.39, io prob drop 0.023
+subspace 6 (d=64, var=1109.48): logit diff drop 0.58, io prob drop 0.035
+subspace 7 (d=32, var=581.21): logit diff drop 0.15, io prob drop 0.011
+subspace 8 (d=32, var=606.98): logit diff drop 0.12, io prob drop 0.007
+subspace 9 (d=32, var=745.91): logit diff drop 0.31, io prob drop 0.019
+subspace 10 (d=32, var=483.25): logit diff drop 0.26, io prob drop 0.016
+draw figures..
+partition
+ [192, 128, 64, 64, 64, 64, 64, 32, 32, 32, 32]
+var
+ [3589.864501953125, 2321.45068359375, 1133.6441650390625, 1169.612548828125, 1081.3990478515625, 1026.13623046875, 1109.484375, 581.2134399414062, 606.979736328125, 745.9069213867188, 483.24774169921875]
+effect
+ [1.3024080991744995, 0.876589298248291, 0.29800233244895935, 0.4350210726261139, 0.6074243187904358, 0.3883785605430603, 0.5804282426834106, 0.15495486557483673, 0.12154040485620499, 0.3133161664009094, 0.25867506861686707]
+gini coef test2 unnormed   0.35853293398059455
+figure saved
+gini coef test2 dimension   0.15761050570016455
+figure saved
+gini coef test2 variance   0.16163065952956238
+figure saved
+******* test 3 *******
+build index using R from ../trainedRs/gpt2-newmerge-red_bear-metric-euclidean-unit_size-32-search_steps-25-data_source-minipile-merge_thr-0.04-merge_start-20000-merge_interval-8000-max_steps-100000/R-gpt2-x8.post.pt
+test S pos info
+whole space (d=768, var=17947.24): logit diff drop 4.59, io prob drop 0.349
+subspace 0 (d=128, var=3380.94): logit diff drop 0.78, io prob drop 0.041
+subspace 1 (d=128, var=2967.90): logit diff drop 0.63, io prob drop 0.033
+subspace 2 (d=96, var=2200.51): logit diff drop 0.55, io prob drop 0.036
+subspace 3 (d=96, var=2272.84): logit diff drop 0.81, io prob drop 0.045
+subspace 4 (d=64, var=1451.11): logit diff drop 0.36, io prob drop 0.018
+subspace 5 (d=64, var=1410.99): logit diff drop 0.37, io prob drop 0.022
+subspace 6 (d=32, var=737.19): logit diff drop 0.17, io prob drop 0.012
+subspace 7 (d=32, var=752.51): logit diff drop 0.22, io prob drop 0.014
+subspace 8 (d=32, var=635.50): logit diff drop 0.15, io prob drop 0.011
+subspace 9 (d=32, var=765.76): logit diff drop 0.17, io prob drop 0.009
+subspace 10 (d=32, var=663.23): logit diff drop 0.29, io prob drop 0.016
+subspace 11 (d=32, var=708.74): logit diff drop 0.20, io prob drop 0.013
+draw figures..
+partition
+ [128, 128, 96, 96, 64, 64, 32, 32, 32, 32, 32, 32]
+var
+ [3380.938232421875, 2967.90087890625, 2200.51416015625, 2272.84228515625, 1451.11328125, 1410.992919921875, 737.1915893554688, 752.51123046875, 635.5046997070312, 765.7581176757812, 663.2308959960938, 708.74072265625]
+effect
+ [0.7757924795150757, 0.6252706050872803, 0.5526137351989746, 0.8051574230194092, 0.35658469796180725, 0.3734472095966339, 0.16934825479984283, 0.22395573556423187, 0.1492822766304016, 0.16672544181346893, 0.2904200553894043, 0.2038428634405136]
+gini coef test3-pos unnormed   0.32225908085471566
+figure saved
+gini coef test3-pos dimension   0.11187616715938484
+figure saved
+gini coef test3-pos variance   0.1172620880886946
+figure saved
+test S name info
+whole space (d=768, var=17947.24): logit diff drop 1.97, io prob drop 0.144
+subspace 0 (d=128, var=3380.94): logit diff drop 0.33, io prob drop 0.019
+subspace 1 (d=128, var=2967.90): logit diff drop 0.34, io prob drop 0.022
+subspace 2 (d=96, var=2200.51): logit diff drop 0.28, io prob drop 0.018
+subspace 3 (d=96, var=2272.84): logit diff drop 0.22, io prob drop 0.012
+subspace 4 (d=64, var=1451.11): logit diff drop 0.20, io prob drop 0.011
+subspace 5 (d=64, var=1410.99): logit diff drop 0.19, io prob drop 0.011
+subspace 6 (d=32, var=737.19): logit diff drop 0.09, io prob drop 0.005
+subspace 7 (d=32, var=752.51): logit diff drop 0.07, io prob drop 0.002
+subspace 8 (d=32, var=635.50): logit diff drop 0.10, io prob drop 0.007
+subspace 9 (d=32, var=765.76): logit diff drop 0.08, io prob drop 0.005
+subspace 10 (d=32, var=663.23): logit diff drop 0.09, io prob drop 0.004
+subspace 11 (d=32, var=708.74): logit diff drop 0.05, io prob drop 0.002
+draw figures..
+partition
+ [128, 128, 96, 96, 64, 64, 32, 32, 32, 32, 32, 32]
+var
+ [3380.938232421875, 2967.90087890625, 2200.51416015625, 2272.84228515625, 1451.11328125, 1410.992919921875, 737.1915893554688, 752.51123046875, 635.5046997070312, 765.7581176757812, 663.2308959960938, 708.74072265625]
+effect
+ [0.3297385275363922, 0.3439761996269226, 0.2839406430721283, 0.2212849259376526, 0.20376262068748474, 0.18738320469856262, 0.0899600088596344, 0.06602247804403305, 0.10448894649744034, 0.07975858449935913, 0.08835646510124207, 0.04941125214099884]
+gini coef test3-S_name unnormed   0.3308734018646638
+figure saved
+gini coef test3-S_name dimension   0.09644491848906285
+figure saved
+gini coef test3-S_name variance   0.12096771941695872
+figure saved
+load greater than data (1000 samples)
+******* test 4 *******
+build index using R from ../trainedRs/gpt2-newmerge-red_bear-metric-euclidean-unit_size-32-search_steps-25-data_source-minipile-merge_thr-0.04-merge_start-20000-merge_interval-8000-max_steps-100000/R-gpt2-x9.post.pt
+whole space (d=768, var=22342.82): prob drop 0.686
+subspace 0 (d=128, var=3651.14): prob drop 0.065
+subspace 1 (d=96, var=2698.25): prob drop 0.049
+subspace 2 (d=96, var=2809.31): prob drop 0.035
+subspace 3 (d=64, var=1772.95): prob drop 0.024
+subspace 4 (d=64, var=2149.40): prob drop 0.013
+subspace 5 (d=64, var=2146.35): prob drop 0.020
+subspace 6 (d=64, var=1846.82): prob drop 0.020
+subspace 7 (d=32, var=942.58): prob drop 0.008
+subspace 8 (d=32, var=851.27): prob drop 0.015
+subspace 9 (d=32, var=898.66): prob drop 0.012
+subspace 10 (d=32, var=854.17): prob drop 0.006
+subspace 11 (d=32, var=826.88): prob drop 0.010
+subspace 12 (d=32, var=895.03): prob drop 0.012
+draw figures..
+partition
+ [128, 96, 96, 64, 64, 64, 64, 32, 32, 32, 32, 32, 32]
+var
+ [3651.139404296875, 2698.25439453125, 2809.307861328125, 1772.945556640625, 2149.403076171875, 2146.346923828125, 1846.820556640625, 942.5849609375, 851.2733154296875, 898.6585083007812, 854.1685791015625, 826.88427734375, 895.0324096679688]
+effect
+ [0.0647735744714737, 0.049099162220954895, 0.03506986424326897, 0.023576615378260612, 0.01259921956807375, 0.0200051162391901, 0.01967816986143589, 0.007853586226701736, 0.015293758362531662, 0.011670008301734924, 0.005772363860160112, 0.009850254282355309, 0.011734317988157272]
+gini coef test4 unnormed   0.38623113156687905
+figure saved
+gini coef test4 dimension   0.1642302271474025
+figure saved
+gini coef test4 variance   0.1800133693432645
+figure saved

@@ -1,0 +1,46 @@
+making dataset for ('nobel_prize_winner', 'Field')
+before filtering 927
+['<bos>', 'A', '.', '▁Michael', '▁Spence', '▁won', '▁the', '▁Nobel', '▁Prize', '▁in', '▁Economics', '.', '▁A', 'age', '▁N', '.', '▁Bohr', '▁won', '▁the', '▁Nobel', '▁Prize', '▁in', '▁Physics']
+['▁Physics']
+remove Linus Pauling  Peace,Chemistry ['▁Peace', ',', 'Chemistry']
+remove Marie Curie  Physics,Chemistry ['▁Physics', ',', 'Chemistry']
+after filtering 719
+len to names defaultdict(<class 'list'>, {2: ['Jake Milo', 'Zoe Trin', 'Amy Pell', 'Lila Dorn', 'Caleb Drayton', 'Maya Vickers', 'Camila Rojas', 'Thiago Nascimento'], 3: ['Ella Varn', 'Liam Dace', 'Nina Korr', 'Owen Jall', 'Eli Roven', 'Noah Vesk', 'Max Taren', 'Mira Solt', 'Ben Carteron', 'Lena Whitlow', 'Travis Kenley', 'Nora Ellman', 'Owen Halberg', 'Tessa Donley', 'Jared Minton', 'Erin Walcott', 'Emil Kovarik', 'Oskar Feldmann', 'Weilun Zhang', 'Kofi Mensah', 'Farid Nazari', 'Tama Raukura', 'Nathaniel Halemai'], 5: ['Lars V. Nygren', 'Katya Vedenina', 'Nurul Syafiqah', 'Thandiwe Mahlangu', 'Lemlem Tsegaye', 'Joseph M. Kabwe', 'Leila H. Darwish', 'Emre Tanrikulu', 'Hemi Te Paea', 'Mireille Dufournet', 'Hirotaka Nishimuraya', 'Juan Sebastián Carreñosa'], 6: ['Giulia R. Bastianelli', 'Antoine M. Beaulac', 'Ryohei K. Matsuda', 'Sung-Ho J. Min', 'Takeshi Morikawara', 'Chandrakant Devendranath', 'Ekaterina Miroshenkova', 'Nandakumar Haricharan Iyer', 'Madhavendra Narayana Das', 'Vishwanatha Keshava Rao'], 4: ['Nikhil Venkataram', 'Rafael G. Montes', 'Lucía C. Villanueva', 'Jacob N. McAllister', 'Alejandro Sorianez'], 9: ['Davaadorj B. Enkhjin', 'Vellupillai Ganapathi Subramanian'], 7: ['Adewale T. Okonjo', 'Samira El-Khatib', 'Ayan S. Mukhamedov', 'Anastasiya Vedenitskaya', 'Abdulrahman El-Mazrouei', 'Fatimah Zahrah Baqri', 'Sibusiso Makhumeni'], 8: ['Siddananda Raghunatha Pillai', 'Sir Anantaswamy Venugopal Sharma', 'Thiruvalluvan Krishnamurthy'], 10: ['Ramasubramaniam Chidambaram Moorthy']})
+original model behavior 	context rate: 0.337 	param rate: 0.629
+layer (9, 'mid') whole space (d=2304):
+corrupt param behavior 	context rate: 0.976 	param rate: 0.007
+corrupt context behavior 	context rate: 0.024 	param rate: 0.925
+layer (9, 'mid') subspace 0 (d=432): 
+corrupt param behavior 	context rate: 0.430 	param rate: 0.535
+corrupt context behavior 	context rate: 0.307 	param rate: 0.659
+layer (9, 'mid') subspace 1 (d=288): 
+corrupt param behavior 	context rate: 0.332 	param rate: 0.637
+corrupt context behavior 	context rate: 0.330 	param rate: 0.640
+layer (9, 'mid') subspace 2 (d=288): 
+corrupt param behavior 	context rate: 0.380 	param rate: 0.587
+corrupt context behavior 	context rate: 0.261 	param rate: 0.701
+layer (9, 'mid') subspace 3 (d=288): 
+corrupt param behavior 	context rate: 0.335 	param rate: 0.624
+corrupt context behavior 	context rate: 0.303 	param rate: 0.662
+layer (9, 'mid') subspace 4 (d=288): 
+corrupt param behavior 	context rate: 0.392 	param rate: 0.576
+corrupt context behavior 	context rate: 0.334 	param rate: 0.636
+layer (9, 'mid') subspace 5 (d=288): 
+corrupt param behavior 	context rate: 0.426 	param rate: 0.544
+corrupt context behavior 	context rate: 0.278 	param rate: 0.688
+layer (9, 'mid') subspace 6 (d=144): 
+corrupt param behavior 	context rate: 0.367 	param rate: 0.599
+corrupt context behavior 	context rate: 0.287 	param rate: 0.677
+layer (9, 'mid') subspace 7 (d=144): 
+corrupt param behavior 	context rate: 0.408 	param rate: 0.544
+corrupt context behavior 	context rate: 0.282 	param rate: 0.680
+layer (9, 'mid') subspace 8 (d=72): 
+corrupt param behavior 	context rate: 0.353 	param rate: 0.611
+corrupt context behavior 	context rate: 0.287 	param rate: 0.684
+layer (9, 'mid') subspace 9 (d=72): 
+corrupt param behavior 	context rate: 0.434 	param rate: 0.537
+corrupt context behavior 	context rate: 0.051 	param rate: 0.912
+
+top context rate: space 9, context rate 0.434, param rate 0.537
+top param rate: space 9, context rate 0.051, param rate 0.912
+

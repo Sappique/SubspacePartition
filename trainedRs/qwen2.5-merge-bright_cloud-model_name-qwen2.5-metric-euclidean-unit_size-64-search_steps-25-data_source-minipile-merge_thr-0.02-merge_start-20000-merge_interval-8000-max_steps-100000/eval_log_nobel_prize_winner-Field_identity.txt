@@ -1,0 +1,48 @@
+making dataset for ('nobel_prize_winner', 'Field')
+before filtering 927
+['A', '.', 'ĠMichael', 'ĠSp', 'ence', 'Ġwon', 'Ġthe', 'ĠNobel', 'ĠPrize', 'Ġin', 'ĠEconomics', '.', 'ĠA', 'age', 'ĠN', '.', 'ĠBoh', 'r', 'Ġwon', 'Ġthe', 'ĠNobel', 'ĠPrize', 'Ġin', 'ĠPhysics', '<|endoftext|>']
+['ĠPhysics']
+remove Linus Pauling  Peace,Chemistry ['ĠPeace', ',', 'Chem', 'istry']
+remove Marie Curie  Physics,Chemistry ['ĠPhysics', ',', 'Chem', 'istry']
+after filtering 552
+len to names defaultdict(<class 'list'>, {2: ['Jake Milo', 'Amy Pell'], 3: ['Ella Varn', 'Liam Dace', 'Nina Korr', 'Owen Jall', 'Zoe Trin', 'Eli Roven', 'Noah Vesk', 'Max Taren', 'Ben Carteron', 'Lena Whitlow', 'Travis Kenley', 'Nora Ellman', 'Maya Vickers', 'Owen Halberg', 'Jared Minton', 'Erin Walcott'], 4: ['Lila Dorn', 'Mira Solt', 'Caleb Drayton', 'Tessa Donley', 'Emil Kovarik', 'Weilun Zhang', 'Kofi Mensah', 'Farid Nazari', 'Camila Rojas', 'Thiago Nascimento', 'Nathaniel Halemai', 'Alejandro Sorianez'], 5: ['Lars V. Nygren', 'Oskar Feldmann', 'Katya Vedenina', 'Nikhil Venkataram', 'Lemlem Tsegaye', 'Joseph M. Kabwe', 'Emre Tanrikulu', 'Rafael G. Montes', 'Hemi Te Paea'], 7: ['Giulia R. Bastianelli', 'Ryohei K. Matsuda', 'Lucía C. Villanueva', 'Mireille Dufournet', 'Sibusiso Makhumeni', 'Vishwanatha Keshava Rao'], 6: ['Antoine M. Beaulac', 'Sung-Ho J. Min', 'Nurul Syafiqah', 'Thandiwe Mahlangu', 'Samira El-Khatib', 'Leila H. Darwish', 'Tama Raukura', 'Jacob N. McAllister', 'Takeshi Morikawara'], 9: ['Davaadorj B. Enkhjin', 'Nandakumar Haricharan Iyer', 'Siddananda Raghunatha Pillai', 'Sir Anantaswamy Venugopal Sharma'], 8: ['Adewale T. Okonjo', 'Ayan S. Mukhamedov', 'Anastasiya Vedenitskaya', 'Abdulrahman El-Mazrouei', 'Chandrakant Devendranath', 'Ekaterina Miroshenkova', 'Hirotaka Nishimuraya', 'Fatimah Zahrah Baqri', 'Juan Sebastián Carreñosa', 'Madhavendra Narayana Das'], 11: ['Vellupillai Ganapathi Subramanian'], 10: ['Thiruvalluvan Krishnamurthy'], 12: ['Ramasubramaniam Chidambaram Moorthy']})
+original model behavior 	context rate: 0.565 	param rate: 0.420
+layer (11, 'mid') whole space (d=1536):
+corrupt param behavior 	context rate: 0.998 	param rate: 0.000
+corrupt context behavior 	context rate: 0.013 	param rate: 0.951
+layer (11, 'mid') subspace 0 (d=256): 
+corrupt param behavior 	context rate: 0.703 	param rate: 0.274
+corrupt context behavior 	context rate: 0.487 	param rate: 0.478
+layer (11, 'mid') subspace 1 (d=256): 
+corrupt param behavior 	context rate: 0.690 	param rate: 0.301
+corrupt context behavior 	context rate: 0.585 	param rate: 0.399
+layer (11, 'mid') subspace 2 (d=256): 
+corrupt param behavior 	context rate: 0.639 	param rate: 0.350
+corrupt context behavior 	context rate: 0.536 	param rate: 0.447
+layer (11, 'mid') subspace 3 (d=128): 
+corrupt param behavior 	context rate: 0.674 	param rate: 0.313
+corrupt context behavior 	context rate: 0.572 	param rate: 0.413
+layer (11, 'mid') subspace 4 (d=128): 
+corrupt param behavior 	context rate: 0.630 	param rate: 0.355
+corrupt context behavior 	context rate: 0.545 	param rate: 0.440
+layer (11, 'mid') subspace 5 (d=128): 
+corrupt param behavior 	context rate: 0.623 	param rate: 0.361
+corrupt context behavior 	context rate: 0.565 	param rate: 0.422
+layer (11, 'mid') subspace 6 (d=128): 
+corrupt param behavior 	context rate: 0.582 	param rate: 0.395
+corrupt context behavior 	context rate: 0.560 	param rate: 0.417
+layer (11, 'mid') subspace 7 (d=64): 
+corrupt param behavior 	context rate: 0.576 	param rate: 0.409
+corrupt context behavior 	context rate: 0.558 	param rate: 0.428
+layer (11, 'mid') subspace 8 (d=64): 
+corrupt param behavior 	context rate: 0.582 	param rate: 0.404
+corrupt context behavior 	context rate: 0.571 	param rate: 0.415
+layer (11, 'mid') subspace 9 (d=64): 
+corrupt param behavior 	context rate: 0.596 	param rate: 0.384
+corrupt context behavior 	context rate: 0.556 	param rate: 0.424
+layer (11, 'mid') subspace 10 (d=64): 
+corrupt param behavior 	context rate: 0.601 	param rate: 0.386
+corrupt context behavior 	context rate: 0.562 	param rate: 0.424
+
+top context rate: space 0, context rate 0.703, param rate 0.274
+top param rate: space 0, context rate 0.487, param rate 0.478
