@@ -51,16 +51,16 @@ def print_to_both(*args, f=None):
     print(*args, file=f, flush=True)
 
 
-def more_readable_gpt2_tokens(tokens, tokenizer):
+def more_readable_gpt2_tokens(tokens, byte_decoder):
     # tokens = list(map(lambda x: x if x != "<|endoftext|>" else "[bos]", tokens))
     # this changes the model prediction, it's just a temporary workaround
     tokens = tokens.copy()
     for i in range((len(tokens))):
-        decoded = bytearray([tokenizer.byte_decoder[c] for c in tokens[i]]).decode("utf-8", errors="replace") 
+        decoded = bytearray([byte_decoder[c] for c in tokens[i]]).decode("utf-8", errors="replace") 
         if "�" in decoded and (i < len(tokens)-1) and len(tokens[i]) < 4:
             t = tokens[i].lstrip("Ġ")
             tokens[i] = "Ġ_" if tokens[i].startswith("Ġ") else "_"
             tokens[i+1] = t + tokens[i+1]
     
-    new_tokens = [bytearray([tokenizer.byte_decoder[c] for c in t]).decode("utf-8", errors="replace") for t in tokens]
+    new_tokens = [bytearray([byte_decoder[c] for c in t]).decode("utf-8", errors="replace") for t in tokens]
     return new_tokens
