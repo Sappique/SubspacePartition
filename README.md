@@ -38,8 +38,9 @@ This repo contains code for the paper Decomposing Representation Space into Inte
 
 - Toy setting:  `model_train.py` -> `model_analyze.py` -> `train_search_merge.py` change hyperparameters inside each file.
 - LM experiments: 
+  **If you just want to run the web app locally with provided orthogonal matrices, directly start from step iii**
   1. Go to `training` folder, and `python train_search.py --exp_name [EXP_NAME]`
 Change other arguments as you want in command line. Like mentioned, configurations we used can be found in `trainedRs/[EXP_NAME]/training_args.json`
-   2. Go to `evaluate` folder, and `python evaluate.py --exp_name [EXP_NAME]` or `python evaluate_confict.py --exp_name [EXP_NAME]`
-   3. Go to `preimage` folder. Run `cache_act.py --model_name [MODEL_NAME]` (this only needs to run once for each model). Run `build_index.py --exp_name [EXP_NAME]` to build and save faiss index. Run `cache_attribution.py  --exp_name [EXP_NAME]` (This step is not need if you don't need attribution scores, and it's kind of time consuming). All 3 steps in this pipeline provide `--override` option if you want to override already saved data. 
-   4. Finally run `streamlit run app.py [EXP_NAME]` and check your browser.
+  2. Go to `evaluate` folder, and `python evaluate.py --exp_name [EXP_NAME]` or `python evaluate_confict.py --exp_name [EXP_NAME]`
+  3. Go to `preimage` folder. Run `cache_act.py --model_name [MODEL_NAME]` (this only needs to run once for each model). Run `build_index.py --exp_name [EXP_NAME]` to build and save faiss index. Run `cache_attribution.py  --exp_name [EXP_NAME]` (This step is not need if you don't need attribution scores, and it's kind of time consuming). All 3 steps in this pipeline provide `--override` option if you want to override already saved data. 
+  4. Finally run `streamlit run app.py [EXP_NAME]` and check your browser.

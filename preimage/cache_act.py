@@ -38,20 +38,27 @@ save_dtype = torch.float16
 model_name = args.model_name
 set_seed(0)
 
-# with open("../dataset/ravel_250.json") as f:
-#     subset1 = Dataset.from_dict({"sentence": json.load(f)})
+datasets = []
+if args.model_name == "gpt2":
+    with open("../dataset/prompts_ioi.json") as f:
+        prompts_ioi = json.load(f)
+    subset = Dataset.from_dict({"sentence": prompts_ioi[:1000]})
+    datasets.append(subset)
 
-with open("../dataset/prompts_ioi.json") as f:
-    prompts_ioi = json.load(f)
-subset2 = Dataset.from_dict({"sentence": prompts_ioi[:1000]})
+    with open("../dataset/prompts_greater_than.json") as f:
+        prompts_gt = json.load(f)
+    subset = Dataset.from_dict({"sentence": prompts_gt[:1000]})
+    datasets.append(subset)
 
-with open("../dataset/prompts_greater_than.json") as f:
-    prompts_gt = json.load(f)
-subset3 = Dataset.from_dict({"sentence": prompts_gt[:1000]})
+elif args.model_name in ["qwen2.5", "gemma2"]:
+    with open("../dataset/ravel_250.json") as f:
+        subset = Dataset.from_dict({"sentence": json.load(f)})
+    datasets.append(subset)
 
+subset = load_dataset("JeanKaddour/minipile", split="train").shuffle(seed=0).select(range(2000)).rename_column("text", "sentence")
+datasets.append(subset)
 
-subset4 = load_dataset("JeanKaddour/minipile", split="train").shuffle(seed=0).select(range(2000)).rename_column("text", "sentence")
-data = concatenate_datasets([subset2, subset3, subset4])
+data = concatenate_datasets(datasets)
 
 model = HookedTransformer.from_pretrained(
     to_valid_model_name(model_name),
@@ -80,7 +87,16 @@ def name_filter(name):
     if name.endswith("hook_resid_post"):
         return True
     return False
-cache = model.add_caching_hooks(name_filter) 
+if args.model_name == "gpt2":
+    cache = model.add_caching_hooks(name_filter)
+    stop_at_layer = None
+elif args.model_name == "qwen2.5":
+    cache = model.add_caching_hooks("blocks.11.hook_resid_mid")
+    stop_at_layer = 12  # to save some time
+elif args.model_name == "gemma2":
+    cache = model.add_caching_hooks("blocks.9.hook_resid_mid")
+    stop_at_layer = 10  # to save some time
+
 
 cached_act = defaultdict(list)
 
@@ -96,7 +112,7 @@ for sent in tqdm(data, desc="caching activations"):
         token_ids = torch.cat([bos, token_ids], dim=1).to(device)
 
         with torch.autocast("cuda"):
-            model(token_ids, return_type=None)
+            model(token_ids, return_type=None, stop_at_layer=stop_at_layer)
 
         m = token_ids != model.tokenizer.eos_token_id
         m[:, 0] = True  # keep bos
