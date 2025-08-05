@@ -1,5 +1,5 @@
 ### Intro
-This repo contains code for the paper Decomposing Representation Space into Interpretable Subspaces with Unsupervised Learning
+This repo contains code for the paper [Decomposing Representation Space into Interpretable Subspaces with Unsupervised Learning](https://arxiv.org/abs/2508.01916)
 
 ### Repo Structure
 
