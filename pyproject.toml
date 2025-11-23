@@ -1,0 +1,36 @@
+[project]
+name = "subspacepartition"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=4.4.1",
+    "easydict>=1.13",
+    "faiss-cpu>=1.13.0",
+    "matplotlib>=3.10.7",
+    "numpy>=1.26.4",
+    "pandas>=2.3.3",
+    "plotly>=6.5.0",
+    "streamlit>=1.51.0",
+    "torch>=2.8.0",
+    "torchvision==0.23",
+    "tqdm>=4.67.1",
+    "transformer-lens>=2.16.1",
+    "transformers>=4.57.1",
+]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "notebook>=7.5.0",
+]
