@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from collections import defaultdict
 from transformer_lens import HookedTransformerConfig
 from transformers import PreTrainedTokenizerBase
+from torch.utils.data import IterableDataset
 
 
 @dataclass
@@ -39,6 +40,7 @@ class SubspacePartitionConfig:
     exp_name: str
     act_sites: list[str]
     model_config: HookedTransformerConfig
+    dataset: IterableDataset
     tokenizer: PreTrainedTokenizerBase | None = None
     model_weights_path: Path | None = None
     batch_size: int = 128  # for query
@@ -58,7 +60,6 @@ class SubspacePartitionConfig:
     weight_type: str = "none"
     block_len: int = 16384
     clip_grad: float = 100.0
-    data_source: str = "minipile"  # minipile, openwebtext
     device: torch.device | None = None
     output_dir: Path | None = None
     act_site: str | None = None  # don't set this manually
