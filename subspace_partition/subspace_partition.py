@@ -6,6 +6,7 @@ from functools import partial
 from matplotlib import pyplot as plt
 from collections import defaultdict
 from transformer_lens import HookedTransformerConfig
+from transformers import PreTrainedTokenizerBase
 
 
 @dataclass
@@ -33,13 +34,12 @@ class SubspacePartitionConfig:
         block_len: Length of the block.
         clip_grad: Gradient clipping value.
         data_source: Source of the data (e.g., "minipile", "openwebtext").
-        double_q: Whether to use double Q-learning.
     """
 
     exp_name: str
     act_sites: list[str]
-    model_name: str | None = None
-    model_config: HookedTransformerConfig | None = None
+    model_config: HookedTransformerConfig
+    tokenizer: PreTrainedTokenizerBase | None = None
     model_weights_path: Path | None = None
     batch_size: int = 128  # for query
     test_batch_size: int = 128  # 128*512/block_len when unit_size=4
@@ -59,43 +59,16 @@ class SubspacePartitionConfig:
     block_len: int = 16384
     clip_grad: float = 100.0
     data_source: str = "minipile"  # minipile, openwebtext
-    double_q: bool = False
     device: torch.device | None = None
     output_dir: Path | None = None
     act_site: str | None = None  # don't set this manually
 
     def __post_init__(self):
-        assert self.model_name is not None or (
-            self.model_config is not None and self.model_weights_path is not None
-        ), "Either model_name or both model_config and model_weights_path must be provided."
-
         self.refresh_block_num: int = 2048 * 2048 // self.block_len
-        self.caching_batch_size: int = (
-            16 if self.model_name != "gemma" else 2
-        )  # because 8192 n_ctx
+        self.caching_batch_size: int = 16
 
         if self.device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def to_dict(self) -> dict:
-        d = self.__dict__.copy()
-        if self.model_config is not None:
-            model_config_dict = self.model_config.to_dict()
-            # Convert device in model_config to string for JSON serialization
-            if "device" in model_config_dict:
-                model_config_dict["device"] = str(model_config_dict["device"])
-            d["model_config"] = model_config_dict
-        if self.device is not None:
-            d["device"] = str(self.device)
-        if self.model_weights_path is not None:
-            d["model_weights_path"] = str(self.model_weights_path)
-        if self.output_dir is not None:
-            d["output_dir"] = str(self.output_dir)
-        return d
-
-    @classmethod
-    def from_dict(cls, cfg_dict: dict) -> "SubspacePartitionConfig":
-        return cls(**cfg_dict)
 
 
 def run_subspace_partition(cfg: SubspacePartitionConfig):
@@ -124,17 +97,13 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
         mi_search_steps = 50 * 2048 // cfg.block_len
 
     device = cfg.device
+    model_name = cfg.model_config.model_name
 
-    if cfg.model_name is not None:
-        hooked_model = HookedTransformer.from_pretrained(
-            to_valid_model_name(cfg.model_name),
-            fold_ln=False,
-            center_writing_weights=False,
-            center_unembed=False,
-            device=device,
-        )
-    else:
-        hooked_model = HookedTransformer(cfg.model_config).to(device)
+    hooked_model: HookedTransformer = HookedTransformer(
+        cfg.model_config, tokenizer=cfg.tokenizer, move_to_device=True
+    )
+
+    if cfg.model_weights_path is not None:
         state_dict = torch.load(cfg.model_weights_path, map_location=device)
         hooked_model.load_state_dict(state_dict)
 
@@ -145,18 +114,16 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
         cfg.act_site = act_site
         site_name = site_name_to_short_name(act_site)
 
-        if (output_dir / f"R-{cfg.model_name}-{site_name}.pt").exists():
+        if (output_dir / f"R-{model_name}-{site_name}.pt").exists():
             continue
-        log_path = output_dir / f"train_log-{cfg.model_name}-{site_name}.txt"
+        log_path = output_dir / f"train_log-{model_name}-{site_name}.txt"
         f = open(log_path, "w")
         print_ = partial(print_to_both, f=f)
 
-        if not cfg.double_q:
-            buffer = BufferReuse(cfg, hooked_model)
-        else:
-            buffer = BufferReuseDoubleQueue(cfg.to_dict(), hooked_model)
+        buffer = BufferReuse(cfg, hooked_model)
+
         R = NewUnevenRTrainer(
-            h_dim, [cfg.unit_size] * (h_dim // cfg.unit_size), cfg.to_dict(), buffer
+            h_dim, [cfg.unit_size] * (h_dim // cfg.unit_size), cfg, buffer
         ).to(cfg.device)
 
         optimizer = torch.optim.Adam(
@@ -284,7 +251,7 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
                     break
 
         print_(f"finish training ({i+1})")
-        R.save(output_dir, suffix=f"-{cfg.model_name}-{site_name}")
+        R.save(output_dir, suffix=f"-{model_name}-{site_name}")
 
         print_(f"evaluating ({test_search_steps} steps)...")
         eval_result = []
