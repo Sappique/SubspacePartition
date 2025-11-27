@@ -1,0 +1,56 @@
+{'R_grad_norm': 0.26566193252801895, 'training_loss': 2.444055632352829}
+{'R_grad_norm': 0.6239995001256466, 'training_loss': 2.2400707161426543}
+{'R_grad_norm': 0.834159831404686, 'training_loss': 2.1093051338195803}
+{'R_grad_norm': 0.8627157308161258, 'training_loss': 2.017840737104416}
+{'R_grad_norm': 0.8362627279758453, 'training_loss': 1.9317820942401887}
+{'R_grad_norm': 0.8365358445048332, 'training_loss': 1.8668744301795959}
+{'R_grad_norm': 0.8600969704985618, 'training_loss': 1.8192048007249833}
+{'R_grad_norm': 0.8534293836355209, 'training_loss': 1.7924591213464738}
+{'R_grad_norm': 0.8637300617992878, 'training_loss': 1.7683659797906877}
+{'R_grad_norm': 0.8601392975449562, 'training_loss': 1.758798560500145}
+{'R_grad_norm': 0.8596263030171394, 'training_loss': 1.7596831250190734}
+{'R_grad_norm': 0.8444304981827736, 'training_loss': 1.7464054030179978}
+{'R_grad_norm': 0.8422423270344734, 'training_loss': 1.726412494778633}
+{'R_grad_norm': 0.8521186527609825, 'training_loss': 1.7219601315259934}
+{'R_grad_norm': 0.854252196252346, 'training_loss': 1.721098888516426}
+{'R_grad_norm': 0.8446025756001473, 'training_loss': 1.7114272451400756}
+{'R_grad_norm': 0.8677602583169937, 'training_loss': 1.7253992569446563}
+{'R_grad_norm': 0.8549583247303962, 'training_loss': 1.7181349325180053}
+{'R_grad_norm': 0.8478782349824905, 'training_loss': 1.7141839784383774}
+{'R_grad_norm': 0.86450954079628, 'training_loss': 1.7186213010549545}
+{'R_grad_norm': 0.8516459342837334, 'training_loss': 1.7248185151815414}
+{'R_grad_norm': 0.8784329009056091, 'training_loss': 1.714373410344124}
+{'R_grad_norm': 0.8725066423416138, 'training_loss': 1.727242425084114}
+{'R_grad_norm': 0.8620118543505668, 'training_loss': 1.7109360086917877}
+{'R_grad_norm': 0.8790587383508682, 'training_loss': 1.7151882821321487}
+{'R_grad_norm': 0.8757707533240319, 'training_loss': 1.7180528968572617}
+{'R_grad_norm': 0.8704691034555435, 'training_loss': 1.7218947041034698}
+{'R_grad_norm': 0.8688487243652344, 'training_loss': 1.709959573149681}
+{'R_grad_norm': 0.852636870443821, 'training_loss': 1.7144217717647552}
+{'R_grad_norm': 0.8656411778926849, 'training_loss': 1.72062313914299}
+{'R_grad_norm': 0.8429254227876664, 'training_loss': 1.714916695356369}
+{'R_grad_norm': 0.8621246588230133, 'training_loss': 1.7147205489873887}
+{'R_grad_norm': 0.8727171936631203, 'training_loss': 1.720009589791298}
+{'R_grad_norm': 0.8764675840735435, 'training_loss': 1.7226540178060532}
+{'R_grad_norm': 0.872649516761303, 'training_loss': 1.7129084855318069}
+{'R_grad_norm': 0.8681100276112557, 'training_loss': 1.7200444024801254}
+{'R_grad_norm': 0.8686911013722419, 'training_loss': 1.7089224362373352}
+{'R_grad_norm': 0.8653464916348458, 'training_loss': 1.7151049596071244}
+{'R_grad_norm': 0.8702481263875961, 'training_loss': 1.7109094780683518}
+{'R_grad_norm': 0.8723378145694732, 'training_loss': 1.7147845125198364}
+{'R_grad_norm': 0.8705295652151108, 'training_loss': 1.7059847044944763}
+{'R_grad_norm': 0.8634156930446625, 'training_loss': 1.71678406894207}
+{'R_grad_norm': 0.8579341465234757, 'training_loss': 1.7180260282754898}
+{'R_grad_norm': 0.8634241539239883, 'training_loss': 1.7106476348638535}
+{'R_grad_norm': 0.8777515268325806, 'training_loss': 1.722537910938263}
+{'R_grad_norm': 0.8811356291174889, 'training_loss': 1.7170611697435378}
+{'R_grad_norm': 0.8681453493237495, 'training_loss': 1.7119470429420471}
+{'R_grad_norm': 0.8883127182722091, 'training_loss': 1.7186156529188157}
+{'R_grad_norm': 0.8799321511387825, 'training_loss': 1.7148295032978058}
+{'R_grad_norm': 0.8736403515934944, 'training_loss': 1.711547617316246}
+finish training (10000)
+evaluating (25 steps)...
+ ******* eval result *******
+mean (weighted) 1.7082897424697876
+mean (unweighted) 1.7082897424697876
+tensor([1.4647, 1.9519])

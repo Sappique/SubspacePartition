@@ -1,8 +1,0 @@
-{'R_grad_norm': 0.015745067843236028, 'training_loss': 0.10712239142507314}
-{'R_grad_norm': 0.016980729922652246, 'training_loss': 0.10401578504592181}
-finish training (500)
-evaluating (25 steps)...
- ******* eval result *******
-mean (weighted) 0.1004851758480072
-mean (unweighted) 0.1004851758480072
-tensor([0.0958, 0.1052])
