@@ -29,6 +29,47 @@ class IterablePureRepeatingPatternDataset(torch.utils.data.IterableDataset):
             yield self._non_iterable_dataset[n]
 
 
+class InfinitePureRepeatingPatternDataset(torch.utils.data.IterableDataset):
+    def __init__(
+        self,
+        vocabulary: list[str],
+        context_length: int,
+        max_pattern_length: int,
+        buffer_size: int = 1000,
+    ):
+        """IterableDataset generating infinite sequences with repeated random patterns.
+
+        Args:
+            vocabulary: List of tokens to sample from.
+            context_length: Length of each sequence.
+            max_pattern_length: Maximum length of a random pattern. Can't be larger than the vocabulary size.
+            buffer_size: Number of samples to pre-generate and keep in a buffer.
+        """
+
+        self.vocabulary = vocabulary
+        self.context_length = context_length
+        self.max_pattern_length = max_pattern_length
+        self.buffer_size = buffer_size
+
+        self.fill_buffer()
+
+    def fill_buffer(self):
+        self.buffer = []
+        for _ in range(self.buffer_size):
+            pattern = random_pattern(self.vocabulary, self.max_pattern_length)
+            repeated_pattern = (pattern * (self.context_length // len(pattern) + 1))[
+                : self.context_length
+            ]
+            self.buffer.append(repeated_pattern)
+
+    def __iter__(self):
+        while True:
+            if len(self.buffer) == 0:
+                self.fill_buffer()
+
+            yield self.buffer.pop()
+
+
 class PureRepeatingPatternDataset(torch.utils.data.Dataset):
     def __init__(
         self,
@@ -60,11 +101,11 @@ class PureRepeatingPatternDataset(torch.utils.data.Dataset):
             self.data.append(repeated_pattern)
 
     def __len__(self) -> int:
-        return 100_000_000
+        return len(self.data)
 
     def __getitem__(self, idx: int) -> str:
 
-        return self.data[idx % len(self.data)]
+        return self.data[idx]
 
 
 def random_pattern(vocabulary: list[str], max_length: int) -> str:

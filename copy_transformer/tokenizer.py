@@ -1,66 +1,81 @@
-from abc import ABC, abstractmethod
+from pathlib import Path
+from transformers import PreTrainedTokenizer
+from typing import List, Optional
 
 
-class BaseTokenizer(ABC):
-    """Abstract base class for tokenizers."""
+class SingleCharTokenizer(PreTrainedTokenizer):
+    """Super simple character tokenizer that takes a list of chars as alphabet."""
 
-    @abstractmethod
-    def encode(self, text: str) -> list[int]:
-        """Encodes the given text into a list of token IDs."""
-        pass
-
-    @abstractmethod
-    def decode(self, ids: list[int]) -> str:
-        """Decodes a list of token IDs back into a string."""
-        pass
-
-
-class SingleCharTokenizer(BaseTokenizer):
-    """A extremely simple tokenizer for single-character tokens."""
-
-    def __init__(self, vocabulary: list[str]):
-        """Initializes the tokenizer with the given vocabulary.
+    def __init__(self, alphabet: List[str], **kwargs):
+        """Creates a character-level tokenizer.
 
         Args:
-            vocabulary: List of single-character tokens.
+            alphabet: List of characters to use as vocabulary. Special tokens
+                should not be included in this list; they can be specified via
+                the kwargs `bos_token`, `eos_token`, `unk_token`, and
+                `pad_token`.
         """
 
-        if any(len(char) != 1 for char in vocabulary):
-            raise ValueError("All tokens in the vocabulary must be single characters.")
+        if any(len(char) != 1 for char in alphabet):
+            raise ValueError("All elements in alphabet must be single characters.")
 
-        self.char_to_id = {char: idx for idx, char in enumerate(vocabulary)}
-        self.id_to_char = {idx: char for idx, char in enumerate(vocabulary)}
+        self.alphabet = alphabet
 
-    def encode(self, text: str) -> list[int]:
-        """Encodes the given text into a list of token IDs.
+        self.char_to_id = {char: idx for idx, char in enumerate(alphabet)}
+        self.id_to_char = {idx: char for char, idx in self.char_to_id.items()}
 
-        Args:
-            text: The input text to encode.
+        super().__init__(**kwargs)
 
-        Returns:
-            A list of token IDs corresponding to the input text.
+        # Add special tokens to vocab after parent init
+        for token, token_id in [
+            (self.bos_token, self.bos_token_id),
+            (self.eos_token, self.eos_token_id),
+            (self.unk_token, self.unk_token_id),
+            (self.pad_token, self.pad_token_id),
+        ]:
+            if token is not None and token_id is not None:
+                self.char_to_id[token] = token_id
+                self.id_to_char[token_id] = token
 
-        Raises:
-            ValueError: If a character in the text is not in the vocabulary.
+    @property
+    def vocab_size(self) -> int:
+        """Returns the vocabulary size."""
+
+        return len(self.char_to_id)
+
+    def get_vocab(self):
+        """Returns the vocabulary as a dictionary mapping characters to IDs."""
+
+        return self.char_to_id.copy()
+
+    def _tokenize(self, text: str, **kwargs) -> List[str]:
+        """Splits the text into individual characters."""
+
+        return list(text)
+
+    def _convert_token_to_id(self, token: str) -> int:
+        """Converts a token to its ID.
+
+        If the token is not found the ID of the unk_token is returned, if the
+        unk_token is set. Otherwise, a KeyError is raised.
         """
+
         try:
-            return [self.char_to_id[char] for char in text]
-        except KeyError as e:
-            raise ValueError(f"Character '{e.args[0]}' not in vocabulary.")
+            return self.char_to_id[token]
+        except KeyError:
+            if self.unk_token is not None:
+                return self.char_to_id[self.unk_token]
+            else:
+                raise KeyError(
+                    f"Token '{token}' not in vocabulary and unk_token is not set."
+                )
 
-    def decode(self, ids: list[int]) -> str:
-        """Decodes a list of token IDs back into a string.
+    def _convert_id_to_token(self, index: int) -> str:
+        """Converts a ID to a token."""
 
-        Args:
-            ids: A list of token IDs to decode.
+        return self.id_to_char[index]
 
-        Returns:
-            The decoded string.
+    def convert_tokens_to_string(self, tokens: List[str]) -> str:
+        """Join tokens into a string."""
 
-        Raises:
-            ValueError: If a token ID is not in the vocabulary.
-        """
-        try:
-            return "".join([self.id_to_char[id] for id in ids])
-        except KeyError as e:
-            raise ValueError(f"ID '{e.args[0]}' not in vocabulary.")
+        return "".join(tokens)

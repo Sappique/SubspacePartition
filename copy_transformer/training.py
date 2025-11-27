@@ -7,8 +7,8 @@ from transformers import PreTrainedTokenizerBase
 def train_transformer(
     model: torch.nn.Module,
     tokenizer: PreTrainedTokenizerBase,
-    training_loader: torch.utils.data.DataLoader,
-    validation_loader: torch.utils.data.DataLoader | None,
+    training_loader: torch.utils.data.DataLoader[str],
+    validation_loader: torch.utils.data.DataLoader[str] | None,
     epochs: int,
     validate: bool = True,
     optimizer: torch.optim.Optimizer | Literal["adam"] = "adam",
@@ -41,7 +41,7 @@ def train_transformer(
         model.train()
         for batch in training_loader:
 
-            tokenized_batch = [tokenizer(sample).input_ids for sample in batch]
+            tokenized_batch = [tokenizer.encode(sample) for sample in batch]
             inputs = torch.tensor([item[:-1] for item in tokenized_batch])
             targets = torch.tensor([item[1:] for item in tokenized_batch])
 
