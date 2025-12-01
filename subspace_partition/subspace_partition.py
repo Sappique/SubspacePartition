@@ -235,7 +235,7 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
                     new_R = torch.cat(new_R, dim=1)
 
                     R = NewUnevenRTrainer(
-                        h_dim, new_partition, cfg.to_dict(), buffer, previous_R=new_R
+                        h_dim, new_partition, cfg, buffer, previous_R=new_R
                     ).to(cfg.device)
                     assert torch.allclose(R.R.weight.data, new_R), (
                         (R.R.weight.data - new_R).abs().mean().item()
