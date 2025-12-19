@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from subspace_partition.training.data import *
 from subspace_partition.training.model import *
 from subspace_partition.training.utils import *
@@ -7,7 +8,8 @@ from matplotlib import pyplot as plt
 from collections import defaultdict
 from transformer_lens import HookedTransformerConfig
 from transformers import PreTrainedTokenizerBase
-from torch.utils.data import IterableDataset
+from subspace_partition.dataset_configs import DatasetConfig, dataset_config_from_dict
+import json
 
 
 @dataclass
@@ -38,11 +40,9 @@ class SubspacePartitionConfig:
     """
 
     exp_name: str
+    model_name: str
+    dataset_config: DatasetConfig
     act_sites: list[str]
-    model_config: HookedTransformerConfig
-    dataset: IterableDataset
-    tokenizer: PreTrainedTokenizerBase | None = None
-    model_weights_path: Path | None = None
     batch_size: int = 128  # for query
     test_batch_size: int = 128  # 128*512/block_len when unit_size=4
     acc_steps: int = 1
@@ -71,8 +71,112 @@ class SubspacePartitionConfig:
         if self.device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        self.dataset: Any | None = None  # Created from dataset_config at runtime
+
+    def to_dict(self) -> dict:
+        """Serialize config to dictionary."""
+        config_dict = {
+            "exp_name": self.exp_name,
+            "model_name": self.model_name,
+            "act_sites": self.act_sites,
+            "batch_size": self.batch_size,
+            "test_batch_size": self.test_batch_size,
+            "acc_steps": self.acc_steps,
+            "metric": self.metric,
+            "max_steps": self.max_steps,
+            "merge_interval": self.merge_interval,
+            "merge_start": self.merge_start,
+            "merge_thr": self.merge_thr,
+            "merge_metric": self.merge_metric,
+            "search_steps": self.search_steps,
+            "unit_size": self.unit_size,
+            "lr": self.lr,
+            "adam_beta1": self.adam_beta1,
+            "adam_beta2": self.adam_beta2,
+            "weight_type": self.weight_type,
+            "block_len": self.block_len,
+            "clip_grad": self.clip_grad,
+        }
+
+        # Handle device
+        config_dict["device"] = str(self.device)
+
+        # Handle dataset config
+        config_dict["dataset_config"] = self.dataset_config.to_dict()
+
+        # Handle output_dir if present
+        if self.output_dir is not None:
+            config_dict["output_dir"] = str(self.output_dir)
+
+        return config_dict
+
+    def save_json(self, filepath: str | Path):
+        """Save configuration to a JSON file."""
+        filepath = Path(filepath)
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    @classmethod
+    def from_dict(
+        cls, config_dict: dict, dataset_config: DatasetConfig | None = None
+    ) -> "SubspacePartitionConfig":
+        """Create a SubspacePartitionConfig from a dictionary."""
+        # Reconstruct device
+        device = None
+        if "device" in config_dict:
+            device = torch.device(config_dict["device"])
+
+        # Reconstruct dataset config if not provided
+        if dataset_config is None:
+            if "dataset_config" not in config_dict:
+                raise ValueError("dataset_config is required in config dict")
+            dataset_config = dataset_config_from_dict(config_dict["dataset_config"])
+
+        # Handle paths
+        output_dir = None
+        if "output_dir" in config_dict:
+            output_dir = Path(config_dict["output_dir"])
+
+        # Create config instance
+        return cls(
+            exp_name=config_dict["exp_name"],
+            model_name=config_dict["model_name"],
+            dataset_config=dataset_config,
+            act_sites=config_dict["act_sites"],
+            batch_size=config_dict.get("batch_size", 128),
+            test_batch_size=config_dict.get("test_batch_size", 128),
+            acc_steps=config_dict.get("acc_steps", 1),
+            metric=config_dict.get("metric", "euclidean"),
+            max_steps=config_dict.get("max_steps", 50_000),
+            merge_interval=config_dict.get("merge_interval", 3_000),
+            merge_start=config_dict.get("merge_start", 10_000),
+            merge_thr=config_dict.get("merge_thr", 0.04),
+            merge_metric=config_dict.get("merge_metric", "mi"),
+            search_steps=config_dict.get("search_steps", 25),
+            unit_size=config_dict.get("unit_size", 32),
+            lr=config_dict.get("lr", 3e-4),
+            adam_beta1=config_dict.get("adam_beta1", 0.9),
+            adam_beta2=config_dict.get("adam_beta2", 0.999),
+            weight_type=config_dict.get("weight_type", "none"),
+            block_len=config_dict.get("block_len", 16384),
+            clip_grad=config_dict.get("clip_grad", 100.0),
+            device=device,
+            output_dir=output_dir,
+        )
+
+    @classmethod
+    def from_json(
+        cls, filepath: str | Path, dataset_config: DatasetConfig | None = None
+    ) -> "SubspacePartitionConfig":
+        """Load configuration from a JSON file."""
+        filepath = Path(filepath)
+        with open(filepath, "r") as f:
+            config_dict = json.load(f)
+        return cls.from_dict(config_dict, dataset_config=dataset_config)
+
 
 def run_subspace_partition(cfg: SubspacePartitionConfig):
+    """Run subspace partition analysis on a model loaded by name."""
     set_seed(0)
 
     if cfg.output_dir is not None:
@@ -87,9 +191,7 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
         raise ValueError(f"Output directory {output_dir} is not empty.")
 
     config_path = output_dir / "training_args.json"
-    with open(config_path, "w") as f:
-        ...
-        # json.dump(cfg.to_dict(), f)
+    cfg.save_json(config_path)
 
     test_search_steps = 200 * 2048 // cfg.block_len
     if cfg.unit_size <= 4:
@@ -98,17 +200,24 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
         mi_search_steps = 50 * 2048 // cfg.block_len
 
     device = cfg.device
-    model_name = cfg.model_config.model_name
 
-    hooked_model: HookedTransformer = HookedTransformer(
-        cfg.model_config, tokenizer=cfg.tokenizer, move_to_device=True
-    )
+    # Load model by name (don't load training config)
+    from subspace_partition.model_configs import load_model
+    from transformer_lens import HookedTransformer
 
-    if cfg.model_weights_path is not None:
-        state_dict = torch.load(cfg.model_weights_path, map_location=device)
-        hooked_model.load_state_dict(state_dict)
+    print(f"Loading model '{cfg.model_name}' from out/models/{cfg.model_name}")
+    model_result = load_model(cfg.model_name, load_training_config=False)
+    # Type assertion since we know load_training_config=False returns just the model
+    assert isinstance(model_result, HookedTransformer)
+    hooked_model: HookedTransformer = model_result
 
+    model_name = cfg.model_name
     h_dim = hooked_model.cfg.d_model
+
+    # Create dataset from config
+    print(f"Creating dataset from config...")
+    dataset = cfg.dataset_config.create_dataset()
+    cfg.dataset = dataset  # Store for BufferReuse
 
     for act_site in cfg.act_sites:
         print("training for", act_site)

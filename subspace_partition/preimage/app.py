@@ -281,7 +281,7 @@ gpt2_byte_decoder = {
 parser = argparse.ArgumentParser()
 parser.add_argument("index_path", type=str, help="path to the index directory")
 parser.add_argument(
-    "cached_acts_path", type=str, help="path to the cached activations directory"
+    "cached_acts_path", type=str, help="path to the cached activations directory", default="out/preimage", nargs="?"
 )
 args = parser.parse_args()
 

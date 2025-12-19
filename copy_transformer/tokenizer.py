@@ -79,3 +79,37 @@ class SingleCharTokenizer(PreTrainedTokenizer):
         """Join tokens into a string."""
 
         return "".join(tokens)
+
+    def to_dict(self):
+        """Serializes the tokenizer to a dictionary."""
+
+        output = {
+            "vocabulary": self.get_vocab(),
+            "bos_token": self.bos_token,
+            "eos_token": self.eos_token,
+            "unk_token": self.unk_token,
+            "pad_token": self.pad_token,
+        }
+
+        return output
+
+    @classmethod
+    def from_dict(cls, dct: dict) -> "SingleCharTokenizer":
+        """Deserializes the tokenizer from a dictionary."""
+
+        vocabulary = dct["vocabulary"]
+        bos_token = dct.get("bos_token", None)
+        eos_token = dct.get("eos_token", None)
+        unk_token = dct.get("unk_token", None)
+        pad_token = dct.get("pad_token", None)
+        return cls(
+            alphabet=[
+                char
+                for char in vocabulary.keys()
+                if char not in {bos_token, eos_token, unk_token, pad_token}
+            ],
+            bos_token=bos_token,
+            eos_token=eos_token,
+            unk_token=unk_token,
+            pad_token=pad_token,
+        )

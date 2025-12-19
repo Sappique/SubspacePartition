@@ -14,28 +14,38 @@ from subspace_partition.preimage.utils import *
 
 
 def run_build_index(
-    trained_Rs_dir: Path,
-    cached_acts_dir: Path,
-    output_dir: Path,
     experiment_name: str,
-    override: bool = False,
     distance_measure: Literal["euclidean", "cosine"] = "cosine",
+    output_dir: Path = Path("out/index"),
+    cached_acts_dir: Path = Path("out/preimage"),
+    trained_Rs_dir: Path = Path("out/subspace_partition"),
+    overwrite_existing: bool = False,
 ):
+    """Build index for subspace partition preimage search.
 
+    Args:
+        trained_Rs_dir: Directory containing trained R matrices and configs.
+        experiment_name: Name of the experiment (used for output directory).
+        distance_measure: Distance measure to use.
+        output_dir: Directory to save the built indices.
+        cached_acts_dir: Directory containing cached activations (all cached acts, not just for this model
+            the correct ones are loaded based on model name and site).
+        trained_Rs_dir: Directory containing the outputs of the subspace partition training (all
+            experiments, not just the one for this model, the correct ones are loaded based on
+            the experiment_name argument).
+        overwrite_existing: Whether to overwrite the output directory if it already exists."""
+    
     torch.set_grad_enabled(False)
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    exp_dir = trained_Rs_dir
-    assert exp_dir.exists()
+    exp_dir = trained_Rs_dir / experiment_name
+    if not exp_dir.exists():
+        raise FileNotFoundError(f"Directory {exp_dir} not found.")
 
-    output_dir = output_dir / f"index-{experiment_name}"
+    output_dir = output_dir / f"index-{experiment_name}-{distance_measure}"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
-
-    with open(exp_dir / "training_args.json") as f:
-        # exp_cfg = json.load(f)
-        ...
 
     if distance_measure == "euclidean":
         cosine = False
@@ -48,7 +58,7 @@ def run_build_index(
 
         output_dir_site = output_dir / f"{model_name}-{site_name}"
         if output_dir_site.exists():
-            if override:
+            if overwrite_existing:
                 shutil.rmtree(output_dir_site)
             else:
                 raise ValueError(

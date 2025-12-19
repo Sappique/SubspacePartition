@@ -1,52 +1,202 @@
-from typing import Literal
+import json
+from pathlib import Path
+from typing import Literal, Any
+from dataclasses import dataclass, field
 import torch
+import subspace_partition.serialization
 
 from transformers import PreTrainedTokenizerBase
+from transformer_lens import HookedTransformerConfig
+from subspace_partition.dataset_configs import DatasetConfig
+
+
+@dataclass
+class TrainingConfig:
+    """Configuration for transformer training.
+
+    This class handles serialization of training parameters while keeping
+    model_config and training_args in separate files.
+
+    Args:
+        model_name: Name for saving/loading the model.
+        epochs: Number of training epochs.
+        learning_rate: Learning rate for optimizer.
+        batch_size: Batch size for training.
+        validate: Whether to run validation.
+        validation_batch_size: Batch size for validation (defaults to batch_size).
+        optimizer_type: Type of optimizer ('adam', etc.).
+        loss_fn_type: Type of loss function ('cross_entropy', etc.).
+        dataset_config: Configuration for the training dataset (required).
+        validation_dataset_config: Optional configuration for validation dataset.
+    """
+
+    model_name: str
+    epochs: int
+    dataset_config: DatasetConfig
+    learning_rate: float = 1e-3
+    batch_size: int = 32
+    validate: bool = True
+    validation_batch_size: int | None = None
+    optimizer_type: str = "adam"
+    loss_fn_type: str = "cross_entropy"
+    validation_dataset_config: DatasetConfig | None = None
+
+    def __post_init__(self):
+        if self.validation_batch_size is None:
+            self.validation_batch_size = self.batch_size
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize training config to dictionary."""
+        config_dict = {
+            "model_name": self.model_name,
+            "epochs": self.epochs,
+            "learning_rate": self.learning_rate,
+            "batch_size": self.batch_size,
+            "validate": self.validate,
+            "validation_batch_size": self.validation_batch_size,
+            "optimizer_type": self.optimizer_type,
+            "loss_fn_type": self.loss_fn_type,
+        }
+
+        # Serialize dataset configs
+        config_dict["dataset_config"] = self.dataset_config.to_dict()
+
+        if self.validation_dataset_config is not None:
+            config_dict["validation_dataset_config"] = (
+                self.validation_dataset_config.to_dict()
+            )
+
+        return config_dict
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        dataset_config: DatasetConfig | None = None,
+        validation_dataset_config: DatasetConfig | None = None,
+    ) -> "TrainingConfig":
+        """Deserialize training config from dictionary.
+
+        Args:
+            data: Dictionary with training configuration.
+            dataset_config: Optional dataset config (overrides one in dict).
+            validation_dataset_config: Optional validation dataset config.
+        """
+        from datasets import dataset_config_from_dict
+
+        # Reconstruct dataset configs
+        if dataset_config is None:
+            if "dataset_config" not in data:
+                raise ValueError("dataset_config is required in config dict")
+            dataset_config = dataset_config_from_dict(data["dataset_config"])
+
+        if validation_dataset_config is None and "validation_dataset_config" in data:
+            validation_dataset_config = dataset_config_from_dict(
+                data["validation_dataset_config"]
+            )
+
+        return cls(
+            model_name=data["model_name"],
+            epochs=data["epochs"],
+            learning_rate=data.get("learning_rate", 1e-3),
+            batch_size=data.get("batch_size", 32),
+            validate=data.get("validate", True),
+            validation_batch_size=data.get("validation_batch_size"),
+            optimizer_type=data.get("optimizer_type", "adam"),
+            loss_fn_type=data.get("loss_fn_type", "cross_entropy"),
+            dataset_config=dataset_config,
+            validation_dataset_config=validation_dataset_config,
+        )
+
+    def save_json(self, filepath: Path):
+        """Save training config to JSON file."""
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=4)
+
+    @classmethod
+    def from_json(cls, filepath: Path, **kwargs) -> "TrainingConfig":
+        """Load training config from JSON file."""
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        return cls.from_dict(data, **kwargs)
 
 
 def train_transformer(
-    model: torch.nn.Module,
+    config: TrainingConfig,
+    model_config: HookedTransformerConfig,
     tokenizer: PreTrainedTokenizerBase,
-    training_loader: torch.utils.data.DataLoader[str],
-    validation_loader: torch.utils.data.DataLoader[str] | None,
-    epochs: int,
-    validate: bool = True,
-    optimizer: torch.optim.Optimizer | Literal["adam"] = "adam",
-    learning_rate: float = 1e-3,
-    loss_fn: torch.nn.Module = torch.nn.CrossEntropyLoss(),
-) -> None:
-    """Train the given transformer using the provided data loaders and parameters.
+    save_dir: Path = Path("out") / "models",
+) -> torch.nn.Module:
+    """Train a transformer using a TrainingConfig.
 
     Args:
-        model: The transformer model to be trained.
+        config: TrainingConfig with all training parameters including dataset configs.
+        model_config: HookedTransformerConfig for the model.
         tokenizer: The tokenizer for the model.
-        training_loader: DataLoader for the training dataset.
-        validation_loader: DataLoader for the validation dataset. Can be None if validate is False.
-        epochs: Number of epochs to train the model.
-        validate: Whether to perform validation after each epoch. Defaults to True.
-        optimizer: Optimizer to use for training. Defaults to Adam optimizer.
-        learning_rate: Learning rate for the optimizer. Defaults to 1e-3.
-        loss_fn: Loss function to use. Defaults to CrossEntropyLoss.
+        save_dir: Directory to save model in. The model is saved in a subdirectory
+            named after config.model_name inside the specified save_dir.
+
+    Returns:
+        The trained model.
+
+    Raises:
+        ValueError: If config.validate is True but no validation_dataset_config provided.
+        FileExistsError: If save_dir exists and is not empty.
     """
 
-    if optimizer == "adam":
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    # Initialize model from config
+    from transformer_lens import HookedTransformer
 
-    if validate and validation_loader is None:
-        raise ValueError(
-            "Validation loader must be provided if validate is set to True."
+    print("Initializing model from config...")
+    model = HookedTransformer(model_config)
+
+    # Create datasets from configs
+    print("Creating training dataset...")
+    training_dataset = config.dataset_config.create_dataset()
+    training_loader = torch.utils.data.DataLoader(
+        training_dataset, batch_size=config.batch_size
+    )
+
+    validation_loader = None
+    if config.validate:
+        if config.validation_dataset_config is None:
+            raise ValueError(
+                "validation_dataset_config must be provided when validate=True"
+            )
+        print("Creating validation dataset...")
+        validation_dataset = config.validation_dataset_config.create_dataset()
+        validation_loader = torch.utils.data.DataLoader(
+            validation_dataset, batch_size=config.validation_batch_size
         )
 
-    for epoch in range(epochs):
+    # Setup optimizer
+    if config.optimizer_type == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    else:
+        raise ValueError(f"Unsupported optimizer type: {config.optimizer_type}")
+
+    # Setup loss function
+    if config.loss_fn_type == "cross_entropy":
+        loss_fn = torch.nn.CrossEntropyLoss()
+    else:
+        raise ValueError(f"Unsupported loss function type: {config.loss_fn_type}")
+
+    # Prepare save directory
+    save_dir = save_dir / config.model_name
+    if save_dir.exists() and any(save_dir.iterdir()):
+        raise FileExistsError(f"Save directory {save_dir} is not empty.")
+
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Training loop
+    for epoch in range(config.epochs):
         model.train()
         for batch in training_loader:
-
             tokenized_batch = [tokenizer.encode(sample) for sample in batch]
             inputs = torch.tensor([item[:-1] for item in tokenized_batch])
             targets = torch.tensor([item[1:] for item in tokenized_batch])
 
             logits = model(inputs)
-
             logits = logits.view(-1, logits.size(-1))
             targets = targets.view(-1)
 
@@ -56,18 +206,17 @@ def train_transformer(
             loss.backward()
             optimizer.step()
 
-        if validate and validation_loader is not None:
+        # Validation
+        if config.validate and validation_loader is not None:
             model.eval()
             total_val_loss = 0.0
             with torch.no_grad():
                 for batch in validation_loader:
-
                     tokenized_batch = [tokenizer.encode(sample) for sample in batch]
                     inputs = torch.tensor([item[:-1] for item in tokenized_batch])
                     targets = torch.tensor([item[1:] for item in tokenized_batch])
 
                     logits = model(inputs)
-
                     logits = logits.view(-1, logits.size(-1))
                     targets = targets.view(-1)
 
@@ -75,59 +224,64 @@ def train_transformer(
                     total_val_loss += val_loss.item()
 
             avg_val_loss = total_val_loss / len(validation_loader)
-            print(f"Epoch {epoch + 1}/{epochs}, Validation Loss: {avg_val_loss:.4f}")
+            print(
+                f"Epoch {epoch + 1}/{config.epochs}, Validation Loss: {avg_val_loss:.4f}"
+            )
+
+    # Save model and configs
+    save_model(config, model, model_config, tokenizer, save_dir)
+
+    return model
 
 
-def add_hooks(model, layers):
-    """
-    model: the PyTorch model
-    layers: list of module names (strings) to save activations from
-
-    returns: (activation_dict, hook_handles)
-    """
-
-    activations = {}
-
-    def hook_fn(name):
-        def fn(module, input, output):
-            # Always detach and move to CPU so we don't keep the graph
-            output, _ = output
-            activations[name] = output.detach().cpu()
-
-        return fn
-
-    handles = []
-    for name, module in model.named_modules():
-        if name in layers:
-            h = module.register_forward_hook(hook_fn(name))
-            handles.append(h)
-
-    return activations, handles
-
-
-def remove_hooks(handles):
-    for h in handles:
-        h.remove()
-
-
-@torch.no_grad
-def log_activations(
+def save_model(
+    config: TrainingConfig,
     model: torch.nn.Module,
+    model_config: HookedTransformerConfig,
     tokenizer: PreTrainedTokenizerBase,
-    loader: torch.utils.data.DataLoader,
-) -> dict[str, list[torch.Tensor]]:
-    """
-    Logs the activations of attention 1 and 2 for the given model and data loader.
-    """
-    model.eval()
-    activations = {"attention1": [], "attention2": []}
-    current_activations, hooks = add_hooks(model, ["attention1", "attention2"])
-    for batch in loader:
-        tokenized_batch = [tokenizer.encode(sample) for sample in batch]
-        inputs = torch.tensor([item[:-1] for item in tokenized_batch])
-        model(inputs)
-        activations["attention1"].append(current_activations["attention1"])
-        activations["attention2"].append(current_activations["attention2"])
+    save_dir: Path,
+) -> None:
+    """Save model weights, model config, tokenizer, and training args to separate files.
 
-    remove_hooks(hooks)
-    return activations
+    This keeps model_config.json and training_args.json separate as requested.
+
+    Args:
+        config: TrainingConfig with training parameters.
+        model: The trained model.
+        model_config: HookedTransformerConfig for the model.
+        tokenizer: The tokenizer.
+        save_dir: Directory to save all files.
+    """
+
+    # Save model weights
+    weights_path = save_dir / "weights.pt"
+    torch.save(model.state_dict(), weights_path)
+
+    # Save model config (separate file)
+    model_config_path = save_dir / "model_config.json"
+    with model_config_path.open("w") as f:
+        json.dump(
+            model_config.to_dict(),
+            f,
+            indent=4,
+            cls=subspace_partition.serialization.HookedTransformerConfigEncoder,
+        )
+
+    # Save tokenizer
+    tokenizer_path = save_dir / "tokenizer.json"
+    with tokenizer_path.open("w") as f:
+        json.dump(
+            tokenizer.to_dict(),
+            f,
+            indent=4,
+        )
+
+    # Save training args (separate file)
+    training_args_path = save_dir / "training_args.json"
+    config.save_json(training_args_path)
+
+    print(f"Model saved to {save_dir}")
+    print(f"  - weights.pt")
+    print(f"  - model_config.json")
+    print(f"  - tokenizer.json")
+    print(f"  - training_args.json")

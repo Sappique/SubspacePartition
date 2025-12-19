@@ -16,6 +16,7 @@ import random
 import numpy as np
 import json
 from transformers import GPT2LMHeadModel
+from subspace_partition.dataset_configs import DatasetConfig
 
 
 def set_seed(seed):
@@ -26,22 +27,41 @@ def set_seed(seed):
 
 
 def run_cache_act(
-    model: HookedTransformer,
-    dataset: torch.utils.data.Dataset,
+    model_name: str,
+    dataset_config: DatasetConfig,
     act_sites: list[str],
-    output_dir: Path,
+    output_dir: Path = Path("out/preimage"),
     max_in_memory: int = 10_000_000,
     override: bool = False,
 ):
+    """Cache activations for a model on a dataset.
+
+    Args:
+        model_name: Name of the model to load from out/models/{model_name}.
+        dataset_config: Configuration for the dataset to cache activations from.
+        act_sites: List of activation sites to cache (e.g., ["blocks.0.hook_resid_post"]).
+        output_dir: Directory to save cached activations.
+        max_in_memory: Maximum number of activations to keep in memory before saving to disk.
+        override: Whether to overwrite existing cache directory.
+    """
 
     torch.set_grad_enabled(False)
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+    # Load model by name
+    from subspace_partition.model_configs import load_model
+
+    print(f"Loading model '{model_name}' from out/models/{model_name}")
+    model = load_model(model_name, load_training_config=False)
+    assert isinstance(model, HookedTransformer)
+
+    # Create dataset from config
+    print(f"Creating dataset from config...")
+    dataset = dataset_config.create_dataset()
+
     caching_batch_size = 32
     save_dtype = torch.float16
     set_seed(0)
-
-    model_name = model.cfg.model_name
 
     save_dir = output_dir / f"shared_acts-{model_name}"
     if save_dir.exists():
@@ -52,6 +72,16 @@ def run_cache_act(
                 "Output directory already exists. Use override=True to overwrite or chose a different directory."
             )
     save_dir.mkdir(parents=True, exist_ok=False)
+
+    json.dump(
+        {
+            "model_name": model_name,
+            "dataset_config": dataset_config.to_dict(),
+            "act_sites": act_sites,
+        },
+        open(save_dir / "cache_config.json", "w"),
+        indent=4,
+    )
 
     temp_dir = save_dir / "temp"
     temp_dir.mkdir()
