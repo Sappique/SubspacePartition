@@ -1,0 +1,50 @@
+{
+    "model_name": "long_trained_copy_transformer",
+    "epochs": 10,
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "validate": true,
+    "validation_batch_size": 32,
+    "optimizer_type": "adam",
+    "loss_fn_type": "cross_entropy",
+    "dataset_config": {
+        "type": "pure_repeating_pattern",
+        "vocabulary": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J"
+        ],
+        "context_length": 32,
+        "max_pattern_length": 10,
+        "iterable": false,
+        "length": 100000,
+        "buffer_size": 1000
+    },
+    "validation_dataset_config": {
+        "type": "pure_repeating_pattern",
+        "vocabulary": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J"
+        ],
+        "context_length": 32,
+        "max_pattern_length": 10,
+        "iterable": false,
+        "length": 100000,
+        "buffer_size": 1000
+    }
+}
