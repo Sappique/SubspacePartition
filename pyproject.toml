@@ -20,6 +20,13 @@ dependencies = [
     "transformers>=4.57.1",
 ]
 
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["subspace_partition*", "copy_transformer*"]
+
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
 torchvision = [{ index = "pytorch-cpu" }]
@@ -30,7 +37,4 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [dependency-groups]
-dev = [
-    "jupyter>=1.1.1",
-    "notebook>=7.5.0",
-]
+dev = ["jupyter>=1.1.1", "notebook>=7.5.0"]

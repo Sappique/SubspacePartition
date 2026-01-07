@@ -82,7 +82,7 @@ class TrainingConfig:
             dataset_config: Optional dataset config (overrides one in dict).
             validation_dataset_config: Optional validation dataset config.
         """
-        from datasets import dataset_config_from_dict
+        from subspace_partition.dataset_configs import dataset_config_from_dict
 
         # Reconstruct dataset configs
         if dataset_config is None:
