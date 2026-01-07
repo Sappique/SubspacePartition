@@ -24,7 +24,7 @@ class SingleCharTokenizer(PreTrainedTokenizer):
         self.char_to_id = {char: idx for idx, char in enumerate(alphabet)}
         self.id_to_char = {idx: char for char, idx in self.char_to_id.items()}
 
-        super().__init__(**kwargs)
+        super().__init__(name_or_path="custom", add_bos_token=True, **kwargs)
 
         # Add special tokens to vocab after parent init
         for token, token_id in [

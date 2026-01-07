@@ -58,8 +58,8 @@ def load_model(
 
     # Load tokenizer
     with open(tokenizer_config_path, "r") as f:
-        model.tokenizer = copy_transformer.tokenizer.SingleCharTokenizer.from_dict(
-            json.load(f)
+        model.set_tokenizer(
+            copy_transformer.tokenizer.SingleCharTokenizer.from_dict(json.load(f))
         )
 
     # Optionally load training config
