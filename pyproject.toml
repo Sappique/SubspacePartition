@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "circuitsvis>=1.43.3",
     "datasets>=4.4.1",
     "easydict>=1.13",
     "faiss-cpu>=1.13.0",

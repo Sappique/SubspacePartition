@@ -14,6 +14,9 @@ import plotly.graph_objects as go
 import itertools
 from subspace_partition.preimage.utils import *
 import argparse
+import circuitsvis as cv
+import subspace_partition.model_configs
+import transformer_lens
 
 # >>> from transformers import GPT2Tokenizer
 # >>> tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -281,7 +284,11 @@ gpt2_byte_decoder = {
 parser = argparse.ArgumentParser()
 parser.add_argument("index_path", type=str, help="path to the index directory")
 parser.add_argument(
-    "cached_acts_path", type=str, help="path to the cached activations directory", default="out/preimage", nargs="?"
+    "cached_acts_path",
+    type=str,
+    help="path to the cached activations directory",
+    default="out/preimage",
+    nargs="?",
 )
 args = parser.parse_args()
 
@@ -327,6 +334,44 @@ def get_cached_input(path):
 @st.cache_data
 def get_norms(path):
     return np.load(os.path.join(path, "norms.npy"))
+
+
+@st.cache_resource
+def load_model(model_name: str) -> transformer_lens.HookedTransformer:
+    """Load model for computing attention patterns."""
+
+    return subspace_partition.model_configs.load_model(model_name)
+
+
+def compute_attention_patterns(
+    model: transformer_lens.HookedTransformer, prompt: str, layer: int
+):
+    """Compute attention patterns for the given tokens.
+
+    Args:
+        model: The model to use
+        prompt: The prompt string
+        layer: The layer to extract attention patterns from
+
+    Returns:
+        cache: The cache containing attention patterns
+    """
+
+    attention_pattern_hook = f"blocks.{layer}.attn.hook_pattern"
+
+    if not attention_pattern_hook in model.hook_dict.keys():
+        raise ValueError(
+            f"Model does not have hook for attention patterns at layer {layer}."
+        )
+
+    prompt_tokens = model.to_tokens(prompt)
+
+    model.reset_hooks()
+    cache = model.add_caching_hooks([attention_pattern_hook])
+
+    model(prompt_tokens)
+
+    return cache[attention_pattern_hook]
 
 
 @st.cache_data
@@ -461,12 +506,26 @@ with st.sidebar:
 
     show_norm = st.toggle("show norm")
     show_hist = st.toggle("show histogram")
+    show_attention = st.toggle("show attention pattern")
     readable_tokens = st.toggle("more readable tokens")
     show_explanation = st.toggle("show explanation", value=True)
 
 if show_hist:
     fig = make_histogram(index, model_name + sel_act_site + sel_subspace, act_idx)
     st.plotly_chart(fig, use_container_width=False)
+
+if show_attention:
+    st.markdown("##### Attention Patterns")
+    model = load_model(model_name)
+    try:
+        prompt = " ".join(str_tokens)
+        current_layer = int(sel_act_site.split(".")[0][1:])
+        attention_patterns = compute_attention_patterns(model, prompt, current_layer)
+        html = cv.attention.attention_patterns(str_tokens, attention_patterns[0])
+        html = f'<div style="background-color: white; padding: 0 25px 10px 25px;">{html}</div>'
+        st.components.v1.html(str(html), height=450, scrolling=True)
+    except Exception as e:
+        st.error(f"Error computing attention patterns: {e}")
 
 st.markdown("##### Query Activation")
 
