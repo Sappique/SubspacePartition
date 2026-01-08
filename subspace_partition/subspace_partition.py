@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from subspace_partition.training.data import *
 from subspace_partition.training.model import *
 from subspace_partition.training.utils import *
@@ -18,55 +18,77 @@ class SubspacePartitionConfig:
 
     Args:
         exp_name: Name of the experiment.
-        batch_size: Batch size for query.
-        test_batch_size: Batch size for testing (128*512/block_len when unit_size=4).
-        acc_steps: Number of accumulation steps.
-        metric: Metric to use (e.g., "euclidean").
-        max_steps: Maximum number of training steps for R.
-        merge_interval: Interval for merging.
-        merge_start: Step to start merging.
-        merge_thr: Threshold for merging.
-        merge_metric: Metric to use for merging (e.g., "mi").
-        search_steps: Number of search steps.
-        unit_size: Size of the unit.
         model_name: Name of the model (e.g., "gpt2").
-        lr: Learning rate.
+        dataset_config: Configuration for the dataset to use for training.
+        act_sites: List of activation sites to train on (e.g., ["blocks.0.hook_resid_post"]).
+        metric: Distance metric to use for nearest neighbor search.
+        unit_size: Initial size of each subspace unit. The hidden dimension is divided
+            into (h_dim // unit_size) subspaces of this size.
+        max_steps: Total number of training iterations for the rotation matrix R.
+        merge_interval: Number of steps between merge attempts, starting from merge_start.
+        merge_start: Training step at which to begin attempting subspace merges.
+        merge_thr: Threshold for merging subspaces. Subspace pairs with normalized MI
+            above this threshold are candidates for merging.
+        merge_metric: Metric to use for deciding which subspaces to merge. Currently only
+            "mi" (mutual information) is implemented.
+        acc_steps: Gradient accumulation steps. Gradients are accumulated over this many
+            forward/backward passes before updating weights. Effective batch size = batch_size * acc_steps.
+        batch_size: Number of query activations used in each training step. Those are the
+            activations for which we find nearest neighbors in the buffer.
+        test_batch_size: Batch size used during evaluation and merge metric computation
+            (not training).
+        search_steps: Number of key batches to search through when finding nearest neighbors.
+            Total search pool per training step = search_steps * block_len. Higher values
+            improve nearest neighbor approximation but slow training.
+        block_len: Number of key activations used in each search step. Total search pool per
+            training step = search_steps * block_len.
+        lr: Learning rate for Adam optimizer.
         adam_beta1: Beta1 parameter for Adam optimizer.
         adam_beta2: Beta2 parameter for Adam optimizer.
         weight_type: Type of weight (e.g., "none").
-        block_len: Length of the block.
-        clip_grad: Gradient clipping value.
-        data_source: Source of the data (e.g., "minipile", "openwebtext").
+        clip_grad: Maximum gradient norm for gradient clipping.
+        device: Device to run training on (defaults to CUDA if available).
+        output_dir: Directory to save trained models and logs.
+
+    The arguments do not straightforwardly explain how many steps are taken / data is used.
+    Their relationship to that is as follows:
+
+    There are `max_steps` many *training steps*.
+    In each training step, `batch_size` many *query activations* are sampled from the dataset.
+    For each query activation, the nearest neighbor is found among `search_steps` many *key batches*,
+    each of size `block_len`. Thus, the total number of *key activations* to search through per
+    training step is `search_steps * block_len`.
     """
 
     exp_name: str
     model_name: str
     dataset_config: DatasetConfig
     act_sites: list[str]
-    batch_size: int = 128  # for query
-    test_batch_size: int = 128  # 128*512/block_len when unit_size=4
-    acc_steps: int = 1
-    metric: str = "euclidean"
-    max_steps: int = 50_000  # for training R
+    metric: Literal["euclidean", "cosine"] = "euclidean"
+    unit_size: int = 32
+    max_steps: int = 50_000
     merge_interval: int = 3_000
     merge_start: int = 10_000
     merge_thr: float = 0.04
-    merge_metric: str = "mi"
+    merge_metric: Literal["mi"] = "mi"
+    acc_steps: int = 1
+    batch_size: int = 128
+    test_batch_size: int = 128
     search_steps: int = 25
-    unit_size: int = 32
+    block_len: int = 16384
     lr: float = 3e-4
     adam_beta1: float = 0.9
     adam_beta2: float = 0.999
     weight_type: str = "none"
-    block_len: int = 16384
     clip_grad: float = 100.0
     device: torch.device | None = None
     output_dir: Path | None = None
-    act_site: str | None = None  # don't set this manually
 
     def __post_init__(self):
         self.refresh_block_num: int = 2048 * 2048 // self.block_len
         self.caching_batch_size: int = 16
+
+        self.act_site: str | None = None
 
         if self.device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
