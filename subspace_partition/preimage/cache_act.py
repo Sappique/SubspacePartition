@@ -32,6 +32,7 @@ def run_cache_act(
     act_sites: list[str],
     output_dir: Path = Path("out/preimage"),
     max_in_memory: int = 10_000_000,
+    batch_size: int = 32,
     override: bool = False,
 ):
     """Cache activations for a model on a dataset.
@@ -42,6 +43,7 @@ def run_cache_act(
         act_sites: List of activation sites to cache (e.g., ["blocks.0.hook_resid_post"]).
         output_dir: Directory to save cached activations.
         max_in_memory: Maximum number of activations to keep in memory before saving to disk.
+        batch_size: Batch size to use for loading data.
         override: Whether to overwrite existing cache directory.
     """
 
@@ -59,7 +61,6 @@ def run_cache_act(
     print(f"Creating dataset from config...")
     dataset = dataset_config.create_dataset()
 
-    caching_batch_size = 32
     save_dtype = torch.float16
     set_seed(0)
 
@@ -103,7 +104,7 @@ def run_cache_act(
 
     cached_act = defaultdict(list)
 
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=caching_batch_size)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
 
     cached_input = []
     total_count = 0
