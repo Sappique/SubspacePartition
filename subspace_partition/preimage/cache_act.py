@@ -110,27 +110,23 @@ def run_cache_act(
     total_count = 0
     split_count = 0
     for batch in tqdm(data_loader, desc="caching activations"):
-        token_ids = model.tokenizer(
-            batch,
-            return_tensors="pt",
-            padding=True,
-            max_length=model.cfg.n_ctx - 1,
-            truncation=True,
-        )["input_ids"]
-        bos = torch.full(
-            (token_ids.size(0), 1),
-            fill_value=model.tokenizer.eos_token_id,
-            dtype=token_ids.dtype,
-        )
-        token_ids = torch.cat([bos, token_ids], dim=1).to(device)
+        token_ids = model.to_tokens(batch).to(device)
 
         with torch.autocast("cuda"):
             model(token_ids, return_type=None, stop_at_layer=stop_at_layer)
 
-        m = token_ids != model.tokenizer.eos_token_id
-        m[:, 0] = True  # keep bos
+        pad_token_id = model.tokenizer.pad_token_id
+
+        # fall back to bos_token_id if pad_token_id is None
+        if pad_token_id is None:
+            pad_token_id = model.tokenizer.bos_token_id
+
+        # Create mask for non-padding tokens
+        non_padding_token_mask = token_ids != pad_token_id
+        non_padding_token_mask[:, 0] = True  # always keep first token (BOS)
+        
         for act_site in cache:
-            cached_act[act_site].append(cache[act_site][m].to(save_dtype))
+            cached_act[act_site].append(cache[act_site][non_padding_token_mask].to(save_dtype))
 
         def select(seq, mask):
             return [t for t, m_element in zip(seq, mask) if m_element]
@@ -138,7 +134,7 @@ def run_cache_act(
         cached_input.extend(
             [
                 model.tokenizer.convert_ids_to_tokens(select(seq, mask))
-                for seq, mask in zip(token_ids.tolist(), m.tolist())
+                for seq, mask in zip(token_ids.tolist(), non_padding_token_mask.tolist())
             ]
         )
 
@@ -154,7 +150,7 @@ def run_cache_act(
             cached_act = defaultdict(list)
             gc.collect()
 
-        total_count += m.sum().item()
+        total_count += non_padding_token_mask.sum().item()
 
     # save last batch
     if any(len(cached_act[act_site]) > 0 for act_site in cached_act):

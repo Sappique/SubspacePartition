@@ -1,4 +1,5 @@
 import json
+import warnings
 from pathlib import Path
 from typing import Literal, Any
 from dataclasses import dataclass, field
@@ -149,6 +150,7 @@ def train_transformer(
 
     print("Initializing model from config...")
     model = HookedTransformer(model_config)
+    model.set_tokenizer(tokenizer)
 
     # Create datasets from configs
     print("Creating training dataset...")
@@ -175,9 +177,9 @@ def train_transformer(
     else:
         raise ValueError(f"Unsupported optimizer type: {config.optimizer_type}")
 
-    # Setup loss function
+    # Setup loss function (with reduction='none' to allow masking padding tokens)
     if config.loss_fn_type == "cross_entropy":
-        loss_fn = torch.nn.CrossEntropyLoss()
+        loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
     else:
         raise ValueError(f"Unsupported loss function type: {config.loss_fn_type}")
 
@@ -188,19 +190,69 @@ def train_transformer(
 
     save_dir.mkdir(parents=True, exist_ok=True)
 
+    # Get context length and padding token (use model's tokenizer to match model.to_tokens())
+    context_length = model_config.n_ctx
+    if hasattr(model.tokenizer, "pad_token_id") and isinstance(
+        model.tokenizer.pad_token_id, int
+    ):
+        pad_token_id: int = model.tokenizer.pad_token_id
+    else:
+        raise ValueError("Tokenizer must have a pad_token_id attribute.")
+
     # Training loop
     for epoch in range(config.epochs):
         model.train()
         for batch in training_loader:
-            tokenized_batch = [tokenizer.encode(sample) for sample in batch]
-            inputs = torch.tensor([item[:-1] for item in tokenized_batch])
-            targets = torch.tensor([item[1:] for item in tokenized_batch])
+            if any(len(prompt) > context_length - 1 for prompt in batch):
+                warnings.warn(
+                    f"Some sequences in the training set are longer than"
+                    f" {context_length - 1} (context length - 1 for the BOS"
+                    f" token), they will be truncated."
+                )
+
+            # Tokenize with BOS token using model.to_tokens()
+            # model.to_tokens() returns tensor of shape (batch, seq_len) with BOS prepended
+            tokens = model.to_tokens(list(batch), prepend_bos=True)
+
+            # Check for sequences that exceed context length and truncate
+            if tokens.shape[1] > context_length:
+                num_truncated = tokens.shape[1] > context_length
+                warnings.warn(
+                    f"Truncating {tokens.shape[0]} sequence(s) from length {tokens.shape[1]} "
+                    f"to context length {context_length}"
+                )
+                tokens = tokens[:, :context_length]
+
+            # Pad sequences shorter than context length
+            if tokens.shape[1] < context_length:
+                padding_length = context_length - tokens.shape[1]
+                padding = torch.full(
+                    (tokens.shape[0], padding_length),
+                    pad_token_id,
+                    dtype=tokens.dtype,
+                    device=tokens.device,
+                )
+                tokens = torch.cat([tokens, padding], dim=1)
+
+            # Create inputs (all but last token) and targets (all but first token)
+            inputs = tokens[:, :-1]
+            targets = tokens[:, 1:]
+
+            # Create mask to ignore padding tokens in loss (1 for real tokens, 0 for padding)
+            # We mask positions where the TARGET is a padding token
+            target_mask = (targets != pad_token_id).float()
 
             logits = model(inputs)
-            logits = logits.view(-1, logits.size(-1))
-            targets = targets.view(-1)
 
-            loss = loss_fn(logits, targets)
+            # Compute loss with masking for padding tokens
+            logits_flat = logits.view(-1, logits.size(-1))
+            targets_flat = targets.reshape(-1)
+            mask_flat = target_mask.reshape(-1)
+
+            # Compute per-token loss and apply mask
+            per_token_loss = loss_fn(logits_flat, targets_flat)
+            masked_loss = per_token_loss * mask_flat
+            loss = masked_loss.sum() / mask_flat.sum().clamp(min=1)
 
             optimizer.zero_grad()
             loss.backward()
@@ -210,26 +262,51 @@ def train_transformer(
         if config.validate and validation_loader is not None:
             model.eval()
             total_val_loss = 0.0
+            total_val_tokens = 0
             with torch.no_grad():
                 for batch in validation_loader:
-                    tokenized_batch = [tokenizer.encode(sample) for sample in batch]
-                    inputs = torch.tensor([item[:-1] for item in tokenized_batch])
-                    targets = torch.tensor([item[1:] for item in tokenized_batch])
+                    # Tokenize with BOS token using model.to_tokens()
+                    tokens = model.to_tokens(list(batch), prepend_bos=True)
+
+                    # Truncate if needed
+                    if tokens.shape[1] > context_length:
+                        tokens = tokens[:, :context_length]
+
+                    # Pad if needed
+                    if tokens.shape[1] < context_length:
+                        padding_length = context_length - tokens.shape[1]
+                        padding = torch.full(
+                            (tokens.shape[0], padding_length),
+                            pad_token_id,
+                            dtype=tokens.dtype,
+                            device=tokens.device,
+                        )
+                        tokens = torch.cat([tokens, padding], dim=1)
+
+                    inputs = tokens[:, :-1]
+                    targets = tokens[:, 1:]
+
+                    # Create mask to ignore padding tokens in loss
+                    target_mask = (targets != pad_token_id).float()
 
                     logits = model(inputs)
-                    logits = logits.view(-1, logits.size(-1))
-                    targets = targets.view(-1)
 
-                    val_loss = loss_fn(logits, targets)
-                    total_val_loss += val_loss.item()
+                    logits_flat = logits.view(-1, logits.size(-1))
+                    targets_flat = targets.reshape(-1)
+                    mask_flat = target_mask.reshape(-1)
 
-            avg_val_loss = total_val_loss / len(validation_loader)
+                    per_token_loss = loss_fn(logits_flat, targets_flat)
+                    masked_loss = per_token_loss * mask_flat
+                    total_val_loss += masked_loss.sum().item()
+                    total_val_tokens += mask_flat.sum().item()
+
+            avg_val_loss = total_val_loss / max(total_val_tokens, 1)
             print(
                 f"Epoch {epoch + 1}/{config.epochs}, Validation Loss: {avg_val_loss:.4f}"
             )
 
     # Save model and configs
-    save_model(config, model, model_config, tokenizer, save_dir)
+    save_model(config, model, model_config, save_dir)
 
     return model
 
@@ -238,18 +315,14 @@ def save_model(
     config: TrainingConfig,
     model: torch.nn.Module,
     model_config: HookedTransformerConfig,
-    tokenizer: PreTrainedTokenizerBase,
     save_dir: Path,
 ) -> None:
     """Save model weights, model config, tokenizer, and training args to separate files.
-
-    This keeps model_config.json and training_args.json separate as requested.
 
     Args:
         config: TrainingConfig with training parameters.
         model: The trained model.
         model_config: HookedTransformerConfig for the model.
-        tokenizer: The tokenizer.
         save_dir: Directory to save all files.
     """
 
@@ -271,7 +344,7 @@ def save_model(
     tokenizer_path = save_dir / "tokenizer.json"
     with tokenizer_path.open("w") as f:
         json.dump(
-            tokenizer.to_dict(),
+            model.tokenizer.to_dict(),
             f,
             indent=4,
         )
