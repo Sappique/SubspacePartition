@@ -27,9 +27,14 @@ def show_model_attention_patterns(model_name: str, prompt: str | None = None) ->
     if prompt is None:
         try:
             dataset_len = len(dataset)
-            prompt = dataset[random.randint(0, dataset_len - 1)]
+            sample = dataset[random.randint(0, dataset_len - 1)]
         except:
-            prompt = dataset[0]
+            sample = dataset[0]
+        # Extract text from dict if needed
+        if isinstance(sample, dict):
+            prompt = sample["text"]
+        else:
+            prompt = sample
 
     prompt_str = prompt if prompt is not None else dataset[0]
 

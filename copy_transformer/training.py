@@ -152,11 +152,16 @@ def train_transformer(
     model = HookedTransformer(model_config)
     model.set_tokenizer(tokenizer)
 
+    # Custom collate function that handles both plain strings and (string, mask) tuples
+    # without trying to stack variable-length masks into tensors
+    def collate_fn(batch):
+        return list(batch)
+
     # Create datasets from configs
     print("Creating training dataset...")
     training_dataset = config.dataset_config.create_dataset()
     training_loader = torch.utils.data.DataLoader(
-        training_dataset, batch_size=config.batch_size
+        training_dataset, batch_size=config.batch_size, collate_fn=collate_fn
     )
 
     validation_loader = None
@@ -168,7 +173,9 @@ def train_transformer(
         print("Creating validation dataset...")
         validation_dataset = config.validation_dataset_config.create_dataset()
         validation_loader = torch.utils.data.DataLoader(
-            validation_dataset, batch_size=config.validation_batch_size
+            validation_dataset,
+            batch_size=config.validation_batch_size,
+            collate_fn=collate_fn,
         )
 
     # Setup optimizer
@@ -203,7 +210,17 @@ def train_transformer(
     for epoch in range(config.epochs):
         model.train()
         for batch in training_loader:
-            if any(len(prompt) > context_length - 1 for prompt in batch):
+            # Check if batch contains dicts (with mask) or plain strings
+            if isinstance(batch[0], dict):
+                sequences = [item["text"] for item in batch]
+                custom_masks = [item["mask"] for item in batch]
+                has_custom_mask = True
+            else:
+                sequences = list(batch)
+                custom_masks = None
+                has_custom_mask = False
+
+            if any(len(prompt) > context_length - 1 for prompt in sequences):
                 warnings.warn(
                     f"Some sequences in the training set are longer than"
                     f" {context_length - 1} (context length - 1 for the BOS"
@@ -212,7 +229,7 @@ def train_transformer(
 
             # Tokenize with BOS token using model.to_tokens()
             # model.to_tokens() returns tensor of shape (batch, seq_len) with BOS prepended
-            tokens = model.to_tokens(list(batch), prepend_bos=True)
+            tokens = model.to_tokens(sequences, prepend_bos=True)
 
             # Check for sequences that exceed context length and truncate
             if tokens.shape[1] > context_length:
@@ -242,6 +259,34 @@ def train_transformer(
             # We mask positions where the TARGET is a padding token
             target_mask = (targets != pad_token_id).float()
 
+            # Apply custom mask if provided (for masking first pattern repetition)
+            if has_custom_mask:
+                assert custom_masks is not None  # Type narrowing for type checker
+                # Convert character-level masks to tensors
+                # Each mask needs to be padded/truncated to match target length
+                # Account for: BOS token prepended, then shifted for targets
+                # Target positions correspond to predicting tokens at positions 1, 2, ..., context_length-1
+                # Custom mask is for positions 0, 1, ..., len(sequence)-1
+                # After BOS prepend and shift: target[i] predicts token at position i+1 in original sequence
+                # So custom_mask[i] should apply to target[i] (predicting position i in sequence, 0-indexed)
+                batch_size = tokens.shape[0]
+                target_len = targets.shape[1]
+                custom_mask_tensor = torch.zeros(
+                    batch_size, target_len, device=tokens.device
+                )
+
+                for i, mask in enumerate(custom_masks):
+                    # mask corresponds to sequence positions 0..len(seq)-1
+                    # targets correspond to predicting positions 1..context_length-1 after BOS
+                    # So target[j] predicts position j in the original sequence (0-indexed)
+                    mask_len = min(len(mask), target_len)
+                    custom_mask_tensor[i, :mask_len] = torch.tensor(
+                        mask[:mask_len], dtype=torch.float32, device=tokens.device
+                    )
+
+                # Combine with padding mask (both must be 1 for position to be included)
+                target_mask = target_mask * custom_mask_tensor
+
             logits = model(inputs)
 
             # Compute loss with masking for padding tokens
@@ -265,8 +310,18 @@ def train_transformer(
             total_val_tokens = 0
             with torch.no_grad():
                 for batch in validation_loader:
+                    # Check if batch contains dicts (with mask) or plain strings
+                    if isinstance(batch[0], dict):
+                        sequences = [item["text"] for item in batch]
+                        custom_masks = [item["mask"] for item in batch]
+                        has_custom_mask = True
+                    else:
+                        sequences = list(batch)
+                        custom_masks = None
+                        has_custom_mask = False
+
                     # Tokenize with BOS token using model.to_tokens()
-                    tokens = model.to_tokens(list(batch), prepend_bos=True)
+                    tokens = model.to_tokens(sequences, prepend_bos=True)
 
                     # Truncate if needed
                     if tokens.shape[1] > context_length:
@@ -288,6 +343,27 @@ def train_transformer(
 
                     # Create mask to ignore padding tokens in loss
                     target_mask = (targets != pad_token_id).float()
+
+                    # Apply custom mask if provided
+                    if has_custom_mask:
+                        assert (
+                            custom_masks is not None
+                        )  # Type narrowing for type checker
+                        batch_size = tokens.shape[0]
+                        target_len = targets.shape[1]
+                        custom_mask_tensor = torch.zeros(
+                            batch_size, target_len, device=tokens.device
+                        )
+
+                        for i, mask in enumerate(custom_masks):
+                            mask_len = min(len(mask), target_len)
+                            custom_mask_tensor[i, :mask_len] = torch.tensor(
+                                mask[:mask_len],
+                                dtype=torch.float32,
+                                device=tokens.device,
+                            )
+
+                        target_mask = target_mask * custom_mask_tensor
 
                     logits = model(inputs)
 

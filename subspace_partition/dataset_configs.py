@@ -153,14 +153,115 @@ class PureRepeatingPatternConfig(DatasetConfig):
                 )
 
 
+@dataclass
+class UniqueTokenPatternConfig(DatasetConfig):
+    """Config for UniqueTokenPattern dataset variants.
+
+    Generates sequences where a pattern of unique tokens repeats exactly once
+    (e.g., "ABCABC", "2JI82JI8").
+
+    Args:
+        vocabulary: List of tokens to sample from.
+        max_pattern_length: Maximum length of a random pattern.
+        min_pattern_length: Minimum length of a random pattern. Must be at least 2.
+        iterable: If True, creates an IterableDataset. If False, creates a regular Dataset.
+        length: Number of samples. Can be an integer or "infinite" for infinite datasets.
+        buffer_size: Buffer size for infinite datasets (only used when length="infinite").
+        mask_first_repetition: If True, returns (sequence, mask) tuples where mask is 0 for
+            the first pattern occurrence and 1 for the second (used for loss masking).
+    """
+
+    vocabulary: list[str]
+    max_pattern_length: int
+    min_pattern_length: int = 2
+    iterable: bool = True
+    length: int | Literal["infinite"] = "infinite"
+    buffer_size: int = 1000
+    mask_first_repetition: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize config to a dictionary."""
+        return {
+            "type": "unique_token_pattern",
+            "vocabulary": self.vocabulary,
+            "max_pattern_length": self.max_pattern_length,
+            "min_pattern_length": self.min_pattern_length,
+            "iterable": self.iterable,
+            "length": self.length,
+            "buffer_size": self.buffer_size,
+            "mask_first_repetition": self.mask_first_repetition,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UniqueTokenPatternConfig":
+        """Deserialize config from a dictionary."""
+        config_data = {k: v for k, v in data.items() if k != "type"}
+        return cls(
+            vocabulary=config_data["vocabulary"],
+            max_pattern_length=config_data["max_pattern_length"],
+            min_pattern_length=config_data.get("min_pattern_length", 2),
+            iterable=config_data.get("iterable", True),
+            length=config_data.get("length", "infinite"),
+            buffer_size=config_data.get("buffer_size", 1000),
+            mask_first_repetition=config_data.get("mask_first_repetition", False),
+        )
+
+    def create_dataset(self) -> Union[IterableDataset, Dataset]:
+        """Create the actual dataset instance from this config."""
+        if self.length == "infinite":
+            if not self.iterable:
+                raise ValueError("Non-iterable datasets cannot have infinite length")
+            from copy_transformer.data import InfiniteUniqueTokenPatternDataset
+
+            return InfiniteUniqueTokenPatternDataset(
+                vocabulary=self.vocabulary,
+                min_pattern_length=self.min_pattern_length,
+                max_pattern_length=self.max_pattern_length,
+                buffer_size=self.buffer_size,
+                mask_first_repetition=self.mask_first_repetition,
+            )
+        else:
+            # Finite length
+            if not isinstance(self.length, int):
+                raise ValueError(
+                    f"length must be an integer or 'infinite', got {self.length}"
+                )
+
+            if self.iterable:
+                from copy_transformer.data import IterableUniqueTokenPatternDataset
+
+                return IterableUniqueTokenPatternDataset(
+                    num_samples=self.length,
+                    vocabulary=self.vocabulary,
+                    min_pattern_length=self.min_pattern_length,
+                    max_pattern_length=self.max_pattern_length,
+                    mask_first_repetition=self.mask_first_repetition,
+                )
+            else:
+                from copy_transformer.data import UniqueTokenPatternDataset
+
+                return UniqueTokenPatternDataset(
+                    num_samples=self.length,
+                    vocabulary=self.vocabulary,
+                    min_pattern_length=self.min_pattern_length,
+                    max_pattern_length=self.max_pattern_length,
+                    mask_first_repetition=self.mask_first_repetition,
+                )
+
+
 # Registry mapping type strings to config classes
 DATASET_CONFIG_REGISTRY: dict[str, type[DatasetConfig]] = {
     "pure_repeating_pattern": PureRepeatingPatternConfig,
+    "unique_token_pattern": UniqueTokenPatternConfig,
 }
 
 
 def register_dataset_config(type_name: str, config_class: type[DatasetConfig]):
-    """Register a new dataset config type.
+    """Register a new dataset config type at runtime.
+
+    Only use this function if you need to add dataset types dynamically.
+    Permanent dataset types should be declared in this file and added directly
+    to the DATASET_CONFIG_REGISTRY dictionary.
 
     Args:
         type_name: Unique string identifier for this dataset type.

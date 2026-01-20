@@ -104,13 +104,24 @@ def run_cache_act(
 
     cached_act = defaultdict(list)
 
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+    # Custom collate function to handle both plain strings and dicts
+    def collate_fn(batch):
+        return list(batch)
+
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, collate_fn=collate_fn
+    )
 
     cached_input = []
     total_count = 0
     split_count = 0
     for batch in tqdm(data_loader, desc="caching activations"):
-        token_ids = model.to_tokens(batch).to(device)
+        # Extract text from dicts if needed
+        if isinstance(batch[0], dict):
+            texts = [item["text"] for item in batch]
+        else:
+            texts = batch
+        token_ids = model.to_tokens(texts).to(device)
 
         with torch.autocast("cuda"):
             model(token_ids, return_type=None, stop_at_layer=stop_at_layer)
@@ -124,9 +135,11 @@ def run_cache_act(
         # Create mask for non-padding tokens
         non_padding_token_mask = token_ids != pad_token_id
         non_padding_token_mask[:, 0] = True  # always keep first token (BOS)
-        
+
         for act_site in cache:
-            cached_act[act_site].append(cache[act_site][non_padding_token_mask].to(save_dtype))
+            cached_act[act_site].append(
+                cache[act_site][non_padding_token_mask].to(save_dtype)
+            )
 
         def select(seq, mask):
             return [t for t, m_element in zip(seq, mask) if m_element]
@@ -134,7 +147,9 @@ def run_cache_act(
         cached_input.extend(
             [
                 model.tokenizer.convert_ids_to_tokens(select(seq, mask))
-                for seq, mask in zip(token_ids.tolist(), non_padding_token_mask.tolist())
+                for seq, mask in zip(
+                    token_ids.tolist(), non_padding_token_mask.tolist()
+                )
             ]
         )
 
