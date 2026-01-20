@@ -364,7 +364,12 @@ def compute_attention_patterns(
             f"Model does not have hook for attention patterns at layer {layer}."
         )
 
-    prompt_tokens = model.to_tokens(prompt)
+    prompt_tokens = model.to_tokens(prompt, prepend_bos=False)
+
+    if not prompt_tokens[0][0] == model.tokenizer.bos_token_id:
+        raise ValueError(
+            "The prompt is not stating with a BOS token, something has gone wrong"
+        )
 
     model.reset_hooks()
     cache = model.add_caching_hooks([attention_pattern_hook])
@@ -518,7 +523,7 @@ if show_attention:
     st.markdown("##### Attention Patterns")
     model = load_model(model_name)
     try:
-        prompt = " ".join(str_tokens)
+        prompt = "".join(str_tokens)
         current_layer = int(sel_act_site.split(".")[0][1:])
         attention_patterns = compute_attention_patterns(model, prompt, current_layer)
         html = cv.attention.attention_patterns(str_tokens, attention_patterns[0])
