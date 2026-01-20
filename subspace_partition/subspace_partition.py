@@ -215,11 +215,11 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
     config_path = output_dir / "training_args.json"
     cfg.save_json(config_path)
 
-    test_search_steps = 200 * 2048 // cfg.block_len
+    test_search_steps = max(1, 200 * 2048 // cfg.block_len)
     if cfg.unit_size <= 4:
-        mi_search_steps = 5 * 2048 // cfg.block_len
+        mi_search_steps = max(1, 5 * 2048 // cfg.block_len)
     else:
-        mi_search_steps = 50 * 2048 // cfg.block_len
+        mi_search_steps = max(1, 50 * 2048 // cfg.block_len)
 
     device = cfg.device
 

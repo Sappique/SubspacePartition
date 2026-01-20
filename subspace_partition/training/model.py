@@ -343,8 +343,8 @@ class NewUnevenRTrainer(nn.Module):
             smallest_dist = torch.min(smallest_dist, min_v)
 
         self.buffer.cursor = 0
-        n_x = 0
-        n_y = 0
+        n_x = torch.zeros(len(pairs), batch_size, device=device)
+        n_y = torch.zeros(len(pairs), batch_size, device=device)
 
         for i in range(num_steps):
             key_h = next(self.buffer)
