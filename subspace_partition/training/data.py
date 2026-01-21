@@ -127,7 +127,9 @@ class BufferReuse:
                 input_batch, device=self.cfg.device, dtype=torch.long
             ).view(self.cfg.caching_batch_size, -1)
 
-            with torch.autocast("cuda"):
+            # Use autocast for the appropriate device type
+            device_type = "cuda" if self.cfg.device.type == "cuda" else "cpu"
+            with torch.autocast(device_type, enabled=(device_type == "cuda")):
                 acts = self.model(input_batch, stop_at_layer=stop_at_layer)
                 if self.cfg.act_site != "blocks.0.hook_resid_pre":
                     acts = cache[self.cfg.act_site]

@@ -228,7 +228,7 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
     from transformer_lens import HookedTransformer
 
     print(f"Loading model '{cfg.model_name}' from out/models/{cfg.model_name}")
-    model_result = load_model(cfg.model_name, load_training_config=False)
+    model_result = load_model(cfg.model_name, load_training_config=False, device=device)
     # Type assertion since we know load_training_config=False returns just the model
     assert isinstance(model_result, HookedTransformer)
     hooked_model: HookedTransformer = model_result

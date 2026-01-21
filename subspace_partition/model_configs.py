@@ -13,6 +13,7 @@ CUSTOM_MODELS_DIR = Path(__file__).parent.parent / "out" / "models"
 def load_model(
     model_name: str,
     load_training_config: bool = False,
+    device: torch.device | str | None = None,
 ) -> (
     transformer_lens.HookedTransformer
     | tuple[
@@ -24,6 +25,7 @@ def load_model(
     Args:
         model_name: The name of the custom model to load.
         load_training_config: If True, also loads and returns the TrainingConfig.
+        device: Device to load the model onto. If None, uses CUDA if available, else CPU.
 
     Returns:
         If load_training_config is False: The loaded HookedTransformer model.
@@ -52,9 +54,16 @@ def load_model(
             )
         )
 
+    # Determine device
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    elif isinstance(device, str):
+        device = torch.device(device)
+
     # Create and load model
     model = transformer_lens.HookedTransformer(model_config)
-    model.load_state_dict(torch.load(model_weights_path))
+    model.load_state_dict(torch.load(model_weights_path, map_location=device))
+    model = model.to(device)
 
     # Load tokenizer
     with open(tokenizer_config_path, "r") as f:
