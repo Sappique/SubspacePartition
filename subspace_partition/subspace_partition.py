@@ -11,6 +11,8 @@ from transformers import PreTrainedTokenizerBase
 from subspace_partition.dataset_configs import DatasetConfig, dataset_config_from_dict
 import json
 
+SUBSPACE_PARTITION_DIR = Path(__file__).parent.parent / "out" / "subspace_partition"
+
 
 @dataclass
 class SubspacePartitionConfig:
@@ -82,7 +84,7 @@ class SubspacePartitionConfig:
     weight_type: str = "none"
     clip_grad: float = 100.0
     device: torch.device | None = None
-    output_dir: Path | None = None
+    output_dir: Path = SUBSPACE_PARTITION_DIR
 
     def __post_init__(self):
         self.refresh_block_num: int = 2048 * 2048 // self.block_len
@@ -126,9 +128,8 @@ class SubspacePartitionConfig:
         # Handle dataset config
         config_dict["dataset_config"] = self.dataset_config.to_dict()
 
-        # Handle output_dir if present
-        if self.output_dir is not None:
-            config_dict["output_dir"] = str(self.output_dir)
+        # Handle output_dir
+        config_dict["output_dir"] = str(self.output_dir)
 
         return config_dict
 
@@ -154,11 +155,6 @@ class SubspacePartitionConfig:
                 raise ValueError("dataset_config is required in config dict")
             dataset_config = dataset_config_from_dict(config_dict["dataset_config"])
 
-        # Handle paths
-        output_dir = None
-        if "output_dir" in config_dict:
-            output_dir = Path(config_dict["output_dir"])
-
         # Create config instance
         return cls(
             exp_name=config_dict["exp_name"],
@@ -183,7 +179,7 @@ class SubspacePartitionConfig:
             block_len=config_dict.get("block_len", 16384),
             clip_grad=config_dict.get("clip_grad", 100.0),
             device=device,
-            output_dir=output_dir,
+            output_dir=config_dict.get("output_dir", SUBSPACE_PARTITION_DIR),
         )
 
     @classmethod
@@ -201,10 +197,7 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
     """Run subspace partition analysis on a model loaded by name."""
     set_seed(0)
 
-    if cfg.output_dir is not None:
-        output_dir: Path = cfg.output_dir / cfg.exp_name
-    else:
-        output_dir = Path(cfg.exp_name)
+    output_dir: Path = cfg.output_dir / cfg.exp_name
 
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
