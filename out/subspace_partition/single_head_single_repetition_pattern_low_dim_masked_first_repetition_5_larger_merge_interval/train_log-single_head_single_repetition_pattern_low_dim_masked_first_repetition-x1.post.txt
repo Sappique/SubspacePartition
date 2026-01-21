@@ -1,0 +1,61 @@
+{'R_grad_norm': 0.24424563951790332, 'training_loss': 0.2900523769855499}
+{'R_grad_norm': 0.24604135178029538, 'training_loss': 0.2853673177957535}
+{'R_grad_norm': 0.24951338864862918, 'training_loss': 0.28209000438451765}
+{'R_grad_norm': 0.2524054360389709, 'training_loss': 0.2750157991051674}
+{'R_grad_norm': 0.25985396072268485, 'training_loss': 0.2689649683982134}
+{'R_grad_norm': 0.26522778056561946, 'training_loss': 0.26322543926537034}
+{'R_grad_norm': 0.27441886492073536, 'training_loss': 0.255513124987483}
+{'R_grad_norm': 0.27728385001420974, 'training_loss': 0.24921798184514046}
+{'R_grad_norm': 0.2820048162341118, 'training_loss': 0.242973053753376}
+{'R_grad_norm': 0.28840000040829183, 'training_loss': 0.2373183900862932}
+eval result tensor([0.0981, 0.1056, 0.0997, 0.1139])
+computing merge metric
+normed mi [((1, 3), 0.19398261606693268), ((2, 3), 0.18445466458797455), ((0, 3), 0.17874518036842346), ((0, 1), 0.14320334792137146), ((1, 2), 0.13295675814151764), ((0, 2), 0.12466688454151154)]
+******* after merging (0.04): [((1, 3), 8), ((0,), 4), ((2,), 4)]
+{'R_grad_norm': 0.3081693879514933, 'training_loss': 0.4422008654475212}
+{'R_grad_norm': 0.3077995578199625, 'training_loss': 0.43779420748353004}
+{'R_grad_norm': 0.30868788577616213, 'training_loss': 0.4335679788887501}
+{'R_grad_norm': 0.30766612268984317, 'training_loss': 0.43337392777204514}
+{'R_grad_norm': 0.31392914019525053, 'training_loss': 0.430025881677866}
+{'R_grad_norm': 0.3109414908289909, 'training_loss': 0.4289779408276081}
+{'R_grad_norm': 0.30451581060886385, 'training_loss': 0.4283070370554924}
+{'R_grad_norm': 0.30898382380604744, 'training_loss': 0.42710879772901533}
+{'R_grad_norm': 0.306374583914876, 'training_loss': 0.4249278585612774}
+{'R_grad_norm': 0.3113882897049189, 'training_loss': 0.42368016719818113}
+eval result tensor([0.5327, 0.1004, 0.0981])
+computing merge metric
+normed mi [((0, 1), 0.1637303630510966), ((0, 2), 0.15360965331395468), ((1, 2), 0.12540678679943085)]
+******* after merging (0.04): [((0, 1), 12), ((2,), 4)]
+{'R_grad_norm': 0.3208572359383106, 'training_loss': 0.7998472219705581}
+{'R_grad_norm': 0.3208422067016363, 'training_loss': 0.796590464413166}
+{'R_grad_norm': 0.32206489369273184, 'training_loss': 0.797178584933281}
+{'R_grad_norm': 0.32702403485774995, 'training_loss': 0.7934219336509705}
+{'R_grad_norm': 0.3296774525940418, 'training_loss': 0.7922542861104012}
+{'R_grad_norm': 0.32638870269060133, 'training_loss': 0.7933328756690026}
+{'R_grad_norm': 0.32241721741855145, 'training_loss': 0.7902305853366852}
+{'R_grad_norm': 0.3246291320025921, 'training_loss': 0.7943384170532226}
+{'R_grad_norm': 0.3224163333326578, 'training_loss': 0.7904759234189987}
+{'R_grad_norm': 0.32538507647812365, 'training_loss': 0.7867872267961502}
+eval result tensor([0.9439, 0.0994])
+computing merge metric
+normed mi [((0, 1), 0.12636122107505798)]
+******* after merging (0.04): [((0, 1), 16)]
+{'R_grad_norm': 1.4666524002393545e-07, 'training_loss': 1.8508760881423951}
+{'R_grad_norm': 1.466291613283488e-07, 'training_loss': 1.8487673753499985}
+{'R_grad_norm': 1.4728392148555257e-07, 'training_loss': 1.8494958919286728}
+{'R_grad_norm': 1.4663521454849616e-07, 'training_loss': 1.84559037566185}
+{'R_grad_norm': 1.4665944501501825e-07, 'training_loss': 1.8493049192428588}
+{'R_grad_norm': 1.476239891928799e-07, 'training_loss': 1.852401276230812}
+{'R_grad_norm': 1.4603595346329712e-07, 'training_loss': 1.8414063262939453}
+{'R_grad_norm': 1.4574890986551735e-07, 'training_loss': 1.8536098074913026}
+{'R_grad_norm': 1.4591293773236202e-07, 'training_loss': 1.8479907298088074}
+{'R_grad_norm': 1.478559963885573e-07, 'training_loss': 1.8482927763462067}
+eval result tensor([1.3345])
+computing merge metric
+normed mi []
+finish training (8000)
+evaluating (25 steps)...
+ ******* eval result *******
+mean (weighted) 1.328554391860962
+mean (unweighted) 1.328554391860962
+tensor([1.3286])

@@ -1,0 +1,41 @@
+{'R_grad_norm': 0.08749382615089417, 'training_loss': 0.11769756119698287}
+{'R_grad_norm': 0.08749555001035332, 'training_loss': 0.11684259507805109}
+{'R_grad_norm': 0.08767922900617123, 'training_loss': 0.11604049064218998}
+{'R_grad_norm': 0.08940281108021736, 'training_loss': 0.11506300792098045}
+{'R_grad_norm': 0.08853165775537492, 'training_loss': 0.1141561958193779}
+eval result tensor([0.0398, 0.0389, 0.0442, 0.0312])
+computing merge metric
+normed mi [((1, 3), 0.2584724724292755), ((0, 3), 0.25768977403640747), ((0, 1), 0.2298111915588379), ((2, 3), 0.22854579985141754), ((0, 2), 0.22576378285884857), ((1, 2), 0.21173688769340515)]
+******* after merging (0.04): [((1, 3), 8), ((0,), 4), ((2,), 4)]
+{'R_grad_norm': 0.09335120003670454, 'training_loss': 0.1910734687745571}
+{'R_grad_norm': 0.09560526385903359, 'training_loss': 0.18586808405816554}
+{'R_grad_norm': 0.09889300506561995, 'training_loss': 0.17784488201141357}
+{'R_grad_norm': 0.09842771250754595, 'training_loss': 0.1677346385270357}
+{'R_grad_norm': 0.09725051917135716, 'training_loss': 0.160583456158638}
+eval result tensor([0.0715, 0.0399, 0.0452])
+computing merge metric
+normed mi [((1, 2), 0.24018262326717377), ((0, 1), 0.23907633622487387), ((0, 2), 0.18832836548487344)]
+******* after merging (0.04): [((1, 2), 8), ((0,), 8)]
+{'R_grad_norm': 0.10042505919933319, 'training_loss': 0.30406447768211364}
+{'R_grad_norm': 0.10240116521716118, 'training_loss': 0.2916067507863045}
+{'R_grad_norm': 0.10200206395238638, 'training_loss': 0.27965677246451376}
+{'R_grad_norm': 0.09512014992535114, 'training_loss': 0.2733407445251942}
+{'R_grad_norm': 0.09403101295232773, 'training_loss': 0.269225076213479}
+eval result tensor([0.1934, 0.0363])
+computing merge metric
+normed mi [((0, 1), 0.19576393067836761)]
+******* after merging (0.04): [((0, 1), 16)]
+{'R_grad_norm': 4.734247294635452e-08, 'training_loss': 0.691652507185936}
+{'R_grad_norm': 4.748877021398812e-08, 'training_loss': 0.6956138613820076}
+{'R_grad_norm': 4.7434798489121024e-08, 'training_loss': 0.6940257284045219}
+{'R_grad_norm': 4.7405150898072176e-08, 'training_loss': 0.6940446296334266}
+{'R_grad_norm': 4.7235719105032105e-08, 'training_loss': 0.6951753276586533}
+eval result tensor([0.2883])
+computing merge metric
+normed mi []
+finish training (4000)
+evaluating (51 steps)...
+ ******* eval result *******
+mean (weighted) 0.2867937982082367
+mean (unweighted) 0.2867937982082367
+tensor([0.2868])
