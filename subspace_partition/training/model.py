@@ -392,9 +392,9 @@ class NewUnevenRTrainer(nn.Module):
         config["h_dim"] = sum(config["partition"])
         config["cfg"] = cfg
         config["buffer"] = buffer
-        config["previous_R"] = torch.load(path / f"R{suffix}.pt", map_location=cfg.device)[
-            "R.parametrizations.weight.0.base"
-        ]
+        config["previous_R"] = torch.load(
+            path / f"R{suffix}.pt", map_location=cfg.device
+        )["R.parametrizations.weight.0.base"]
         trainer = cls(**config)
         trainer = trainer.to(cfg.device)
         print("model loaded", path)

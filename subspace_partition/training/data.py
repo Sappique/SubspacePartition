@@ -81,18 +81,46 @@ class BufferReuse:
 
     def token_batch(self):
         """
-        Return a batch of tokens (flattened)
+        Return a batch of tokens (flattened) and corresponding mask.
+
+        Returns:
+            tuple: (tokens, mask) where mask is a list of 1s and 0s indicating
+                   which tokens should be included (1) or excluded (0).
+                   mask is None if no masking is needed.
         """
         try:
             tokens = []
+            mask = []
+            has_mask = False
             while True:
-                input_ids = self.model.tokenizer(next(self.data))["input_ids"]
+                sample = next(self.data)
+                # Handle dict samples from masked datasets
+                if isinstance(sample, dict):
+                    text = sample["text"]
+                    sample_mask = sample.get("mask")
+                    if sample_mask is not None:
+                        has_mask = True
+                else:
+                    text = sample
+                    sample_mask = None
+
+                input_ids = self.model.tokenizer(text)["input_ids"]
                 tokens.extend(input_ids)
+
+                # Build mask for these tokens
+                if sample_mask is not None:
+                    mask.extend(sample_mask)
+                else:
+                    mask.extend([1] * len(input_ids))
+
                 if len(tokens) >= self.cfg.caching_batch_size * self.model.cfg.n_ctx:
                     break
                 tokens.append(self.model.tokenizer.eos_token_id)
+                mask.append(1)  # EOS tokens are always included
+
             tokens = tokens[: self.cfg.caching_batch_size * self.model.cfg.n_ctx]
-            return tokens
+            mask = mask[: self.cfg.caching_batch_size * self.model.cfg.n_ctx]
+            return tokens, mask if has_mask else None
 
         except StopIteration:
             print("End of data stream reached")
@@ -102,7 +130,8 @@ class BufferReuse:
     @torch.no_grad()
     def refresh(self):
         gc.collect()
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         if self.cfg.act_site != "blocks.0.hook_resid_pre":
             self.model.reset_hooks()
@@ -114,15 +143,16 @@ class BufferReuse:
             stop_at_layer = 0
 
         buffer = []
+        buffer_size = 0  # Track total number of activations
 
         pbar = tqdm(
             total=self.block_len * self.refresh_block_num,
             desc="Refreshing activations",
             disable=True,
         )
-        while len(buffer) < self.block_len * self.refresh_block_num:
+        while buffer_size < self.block_len * self.refresh_block_num:
             # inside no_grad()
-            input_batch = self.token_batch()
+            input_batch, batch_mask = self.token_batch()
             input_batch = torch.tensor(
                 input_batch, device=self.cfg.device, dtype=torch.long
             ).view(self.cfg.caching_batch_size, -1)
@@ -136,15 +166,29 @@ class BufferReuse:
                 # acts = F.layer_norm(acts, [acts.size(-1)])
 
             acts = acts.flatten(end_dim=1).to(self.buffer_dtype)
-            buffer.extend(list(torch.unbind(acts)))
+
+            # Apply mask to filter out masked token activations
+            if batch_mask is not None:
+                mask_tensor = torch.tensor(
+                    batch_mask, device=acts.device, dtype=torch.bool
+                )
+                acts = acts[mask_tensor]
+
+            buffer.append(acts)
+            buffer_size += acts.size(0)
             pbar.update(acts.size(0))
 
         pbar.close()
 
-        random.shuffle(buffer)
+        # Concatenate all activations and shuffle using indices (faster than shuffling list of tensors)
+        buffer = torch.cat(buffer, dim=0)
+        perm = torch.randperm(buffer.size(0))
+        buffer = buffer[perm]
 
+        # Split into blocks
         for i in range(self.refresh_block_num):
-            block = torch.stack([buffer.pop() for j in range(self.block_len)])
-            self.blocks.append(block)
+            start_idx = i * self.block_len
+            end_idx = start_idx + self.block_len
+            self.blocks.append(buffer[start_idx:end_idx].contiguous())
 
         assert self.blocks[-1].dtype == self.buffer_dtype
