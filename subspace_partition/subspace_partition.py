@@ -347,6 +347,12 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
 
                 if pairs_to_merge:
                     """********* merge *********"""
+                    print_(f"******* MERGING {len(pairs_to_merge)} pair(s) *******")
+                    for p in pairs_to_merge:
+                        print_(
+                            f"  merging subspaces {p[0]} (size {R.partition[p[0]]}) and {p[1]} (size {R.partition[p[1]]}) - MI: {metric[p]:.4f} > threshold {cfg.merge_thr}"
+                        )
+
                     temp = [j for p in pairs_to_merge for j in p]
                     clusters = pairs_to_merge.copy()
                     for j in range(len(R.partition)):
@@ -377,12 +383,28 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
                         betas=(cfg.adam_beta1, cfg.adam_beta2),
                     )
 
-                    print_(f"******* after merging ({cfg.merge_thr}):", clusters_sizes)
+                    print_(
+                        f"******* after merging: {len(clusters_sizes)} subspaces with sizes {[s for _, s in clusters_sizes]}"
+                    )
 
                 else:
+                    max_mi = lis[0][1] if lis else 0.0
+                    print_(
+                        f"******* NO MERGE: highest MI ({max_mi:.4f}) is below threshold ({cfg.merge_thr})"
+                    )
+                    if len(R.partition) <= 2:
+                        print_(
+                            f"******* STOPPING: only {len(R.partition)} subspace(s) remain and no pairs qualify for merging"
+                        )
                     break
 
-        print_(f"finish training ({i+1})")
+        # Determine why training finished
+        if i + 1 >= cfg.max_steps:
+            print_(f"******* FINISHED: reached max_steps ({cfg.max_steps})")
+        else:
+            print_(
+                f"******* FINISHED early at step {i+1}: no more merges possible (all MI values below threshold {cfg.merge_thr})"
+            )
         R.save(output_dir, suffix=f"-{model_name}-{site_name}")
 
         print_(f"evaluating ({test_search_steps} steps)...")
