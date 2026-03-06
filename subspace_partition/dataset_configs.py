@@ -249,10 +249,132 @@ class UniqueTokenPatternConfig(DatasetConfig):
                 )
 
 
+@dataclass
+class UniqueNgramPatternConfig(DatasetConfig):
+    """Config for UniqueNgramPattern dataset variants.
+
+    Generates sequences where a pattern with unique n-grams repeats exactly once,
+    separated by a separator token. Individual tokens may repeat, but all n-grams
+    of size n must be unique.
+
+    Args:
+        vocabulary: List of tokens to sample from.
+        n: Size of n-grams to ensure uniqueness for.
+        separator: Token to insert between the two pattern repetitions.
+        max_pattern_length: Maximum length of pattern in tokens.
+        min_pattern_length: Minimum length of pattern in tokens. Must be at least n.
+        iterable: If True, creates an IterableDataset. If False, creates a regular Dataset.
+        length: Number of samples. Can be an integer or "infinite" for infinite datasets.
+        buffer_size: Buffer size for infinite datasets (only used when length="infinite").
+        mask_first_repetition: If True, returns (sequence, mask) tuples where mask is 0 for
+            the first pattern occurrence (and separator) and 1 for the second.
+        use_only_n_unique_tokens_per_pattern: If set, only use this many unique tokens
+            from vocabulary for each pattern (sampled randomly per pattern).
+    """
+
+    vocabulary: list[str]
+    n: int
+    separator: str
+    max_pattern_length: int
+    min_pattern_length: int = 2
+    iterable: bool = True
+    length: int | Literal["infinite"] = "infinite"
+    buffer_size: int = 1000
+    mask_first_repetition: bool = False
+    use_only_n_unique_tokens_per_pattern: int | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize config to a dictionary."""
+        return {
+            "type": "unique_ngram_pattern",
+            "vocabulary": self.vocabulary,
+            "n": self.n,
+            "separator": self.separator,
+            "max_pattern_length": self.max_pattern_length,
+            "min_pattern_length": self.min_pattern_length,
+            "iterable": self.iterable,
+            "length": self.length,
+            "buffer_size": self.buffer_size,
+            "mask_first_repetition": self.mask_first_repetition,
+            "use_only_n_unique_tokens_per_pattern": self.use_only_n_unique_tokens_per_pattern,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UniqueNgramPatternConfig":
+        """Deserialize config from a dictionary."""
+        config_data = {k: v for k, v in data.items() if k != "type"}
+        return cls(
+            vocabulary=config_data["vocabulary"],
+            n=config_data["n"],
+            separator=config_data["separator"],
+            max_pattern_length=config_data["max_pattern_length"],
+            min_pattern_length=config_data.get("min_pattern_length", 2),
+            iterable=config_data.get("iterable", True),
+            length=config_data.get("length", "infinite"),
+            buffer_size=config_data.get("buffer_size", 1000),
+            mask_first_repetition=config_data.get("mask_first_repetition", False),
+            use_only_n_unique_tokens_per_pattern=config_data.get(
+                "use_only_n_unique_tokens_per_pattern", None
+            ),
+        )
+
+    def create_dataset(self) -> Union[IterableDataset, Dataset]:
+        """Create the actual dataset instance from this config."""
+        if self.length == "infinite":
+            if not self.iterable:
+                raise ValueError("Non-iterable datasets cannot have infinite length")
+            from copy_transformer.data import InfiniteUniqueNgramPatternDataset
+
+            return InfiniteUniqueNgramPatternDataset(
+                vocabulary=self.vocabulary,
+                n=self.n,
+                min_pattern_length=self.min_pattern_length,
+                max_pattern_length=self.max_pattern_length,
+                separator=self.separator,
+                buffer_size=self.buffer_size,
+                mask_first_repetition=self.mask_first_repetition,
+                use_only_n_unique_tokens_per_pattern=self.use_only_n_unique_tokens_per_pattern,
+            )
+        else:
+            # Finite length
+            if not isinstance(self.length, int):
+                raise ValueError(
+                    f"length must be an integer or 'infinite', got {self.length}"
+                )
+
+            if self.iterable:
+                from copy_transformer.data import IterableUniqueNgramPatternDataset
+
+                return IterableUniqueNgramPatternDataset(
+                    num_samples=self.length,
+                    vocabulary=self.vocabulary,
+                    n=self.n,
+                    min_pattern_length=self.min_pattern_length,
+                    max_pattern_length=self.max_pattern_length,
+                    separator=self.separator,
+                    mask_first_repetition=self.mask_first_repetition,
+                    use_only_n_unique_tokens_per_pattern=self.use_only_n_unique_tokens_per_pattern,
+                )
+            else:
+                from copy_transformer.data import UniqueNgramPatternDataset
+
+                return UniqueNgramPatternDataset(
+                    num_samples=self.length,
+                    vocabulary=self.vocabulary,
+                    n=self.n,
+                    min_pattern_length=self.min_pattern_length,
+                    max_pattern_length=self.max_pattern_length,
+                    separator=self.separator,
+                    mask_first_repetition=self.mask_first_repetition,
+                    use_only_n_unique_tokens_per_pattern=self.use_only_n_unique_tokens_per_pattern,
+                )
+
+
 # Registry mapping type strings to config classes
 DATASET_CONFIG_REGISTRY: dict[str, type[DatasetConfig]] = {
     "pure_repeating_pattern": PureRepeatingPatternConfig,
     "unique_token_pattern": UniqueTokenPatternConfig,
+    "unique_ngram_pattern": UniqueNgramPatternConfig,
 }
 
 
