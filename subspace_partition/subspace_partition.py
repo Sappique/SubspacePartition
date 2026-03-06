@@ -51,6 +51,8 @@ class SubspacePartitionConfig:
         clip_grad: Maximum gradient norm for gradient clipping.
         device: Device to run training on (defaults to CUDA if available).
         output_dir: Directory to save trained models and logs.
+        stop_at_n_subspaces: If set to an int, training will stop at the beginning of a
+            merge step if the number of remaining subspaces is less than or equal to this value.
 
     The arguments do not straightforwardly explain how many steps are taken / data is used.
     Their relationship to that is as follows:
@@ -73,6 +75,7 @@ class SubspacePartitionConfig:
     merge_start: int = 10_000
     merge_thr: float = 0.04
     merge_metric: Literal["mi"] = "mi"
+    stop_at_n_subspaces: int | None = None
     acc_steps: int = 1
     batch_size: int = 128
     test_batch_size: int = 128
@@ -112,6 +115,7 @@ class SubspacePartitionConfig:
             "merge_start": self.merge_start,
             "merge_thr": self.merge_thr,
             "merge_metric": self.merge_metric,
+            "stop_at_n_subspaces": self.stop_at_n_subspaces,
             "search_steps": self.search_steps,
             "unit_size": self.unit_size,
             "lr": self.lr,
@@ -170,6 +174,7 @@ class SubspacePartitionConfig:
             merge_start=config_dict.get("merge_start", 10_000),
             merge_thr=config_dict.get("merge_thr", 0.04),
             merge_metric=config_dict.get("merge_metric", "mi"),
+            stop_at_n_subspaces=config_dict.get("stop_at_n_subspaces", None),
             search_steps=config_dict.get("search_steps", 25),
             unit_size=config_dict.get("unit_size", 32),
             lr=config_dict.get("lr", 3e-4),
@@ -282,6 +287,16 @@ def run_subspace_partition(cfg: SubspacePartitionConfig):
                 and ((i + 1 - cfg.merge_start) % cfg.merge_interval == 0)
                 and (i + 1) < (cfg.max_steps - 100)
             ):
+                # Check if we should stop due to reaching target number of subspaces
+                if (
+                    cfg.stop_at_n_subspaces is not None
+                    and len(R.partition) <= cfg.stop_at_n_subspaces
+                ):
+                    print_(
+                        f"******* STOPPING: reached target of {cfg.stop_at_n_subspaces} subspace(s) "
+                        f"(currently {len(R.partition)} subspaces with sizes {R.partition})"
+                    )
+                    break
 
                 eval_result = []
                 for j in tqdm(range(max(1, 50 * 128 // cfg.test_batch_size))):
