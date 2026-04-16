@@ -1,0 +1,89 @@
+{'R_grad_norm': 0.09134502060711384, 'training_loss': 0.10376776352524758}
+{'R_grad_norm': 0.09177102494984865, 'training_loss': 0.10340063277631999}
+{'R_grad_norm': 0.09242313038557767, 'training_loss': 0.10308862000703811}
+{'R_grad_norm': 0.09210140008479356, 'training_loss': 0.1024569521099329}
+{'R_grad_norm': 0.09213303748518228, 'training_loss': 0.10162782035768032}
+{'R_grad_norm': 0.09311437610536814, 'training_loss': 0.10137932680547238}
+{'R_grad_norm': 0.09332274489104747, 'training_loss': 0.10068132773041726}
+{'R_grad_norm': 0.09355359680950642, 'training_loss': 0.10044071685522794}
+{'R_grad_norm': 0.0933370852842927, 'training_loss': 0.09899443756788968}
+{'R_grad_norm': 0.09226547680795193, 'training_loss': 0.09841216247528792}
+{'R_grad_norm': 0.09258096344769001, 'training_loss': 0.09776251960545779}
+{'R_grad_norm': 0.09431303016841412, 'training_loss': 0.09671247206628322}
+{'R_grad_norm': 0.09302178058773279, 'training_loss': 0.09640932507812977}
+{'R_grad_norm': 0.09361577406525612, 'training_loss': 0.09583600390702486}
+{'R_grad_norm': 0.09318734653294086, 'training_loss': 0.09487332131713629}
+{'R_grad_norm': 0.09286076169461012, 'training_loss': 0.09377710048109293}
+{'R_grad_norm': 0.09332306321710349, 'training_loss': 0.09325059354305268}
+{'R_grad_norm': 0.09200823508203029, 'training_loss': 0.09239873122423888}
+{'R_grad_norm': 0.09219735696911811, 'training_loss': 0.09133812688291072}
+{'R_grad_norm': 0.09146747123450041, 'training_loss': 0.09012608107179404}
+{'R_grad_norm': 0.0919924084097147, 'training_loss': 0.08899310041218995}
+{'R_grad_norm': 0.09127181325107812, 'training_loss': 0.08756192445755005}
+{'R_grad_norm': 0.09171901136636734, 'training_loss': 0.08695229593664408}
+{'R_grad_norm': 0.09070663332939148, 'training_loss': 0.08551442913711071}
+{'R_grad_norm': 0.09167974129319191, 'training_loss': 0.08433400936424733}
+{'R_grad_norm': 0.09153678815811872, 'training_loss': 0.08289428681135178}
+{'R_grad_norm': 0.09119794227182865, 'training_loss': 0.08034223057329655}
+{'R_grad_norm': 0.09215190079063178, 'training_loss': 0.07671933528035879}
+{'R_grad_norm': 0.09124646790325641, 'training_loss': 0.0735011898726225}
+{'R_grad_norm': 0.08931113082915544, 'training_loss': 0.07227966528385878}
+{'R_grad_norm': 0.09074431814253331, 'training_loss': 0.07122536644339561}
+{'R_grad_norm': 0.08894299991428851, 'training_loss': 0.07122009430080652}
+{'R_grad_norm': 0.08874795634299516, 'training_loss': 0.07072659078985452}
+{'R_grad_norm': 0.09085116114467383, 'training_loss': 0.07100917290896178}
+{'R_grad_norm': 0.0897230813652277, 'training_loss': 0.07085374254733325}
+{'R_grad_norm': 0.08992939382791519, 'training_loss': 0.07070543728768826}
+{'R_grad_norm': 0.08860228314995766, 'training_loss': 0.0701635117456317}
+{'R_grad_norm': 0.09032454114407301, 'training_loss': 0.07033778715878725}
+{'R_grad_norm': 0.08978650461882352, 'training_loss': 0.07001721616834403}
+{'R_grad_norm': 0.08924428250640631, 'training_loss': 0.06991503428667784}
+{'R_grad_norm': 0.09049622409045696, 'training_loss': 0.06976807426661252}
+{'R_grad_norm': 0.08966821447014808, 'training_loss': 0.06928567606955767}
+{'R_grad_norm': 0.08962908003479242, 'training_loss': 0.06823993787169456}
+{'R_grad_norm': 0.09069605752825736, 'training_loss': 0.06792260508984327}
+{'R_grad_norm': 0.08940563388168812, 'training_loss': 0.06671145033091307}
+{'R_grad_norm': 0.08918063543736934, 'training_loss': 0.06610546300187707}
+{'R_grad_norm': 0.08970635417848825, 'training_loss': 0.06537853365764022}
+{'R_grad_norm': 0.08940121684223414, 'training_loss': 0.06464772056788207}
+{'R_grad_norm': 0.08967914331704378, 'training_loss': 0.06385492054745555}
+{'R_grad_norm': 0.08980898041278124, 'training_loss': 0.0635002040117979}
+eval result tensor([0.0141, 0.0090, 0.0266, 0.0312])
+computing merge metric
+normed mi [((0, 1), 0.4483432471752167), ((2, 3), 0.40182238817214966), ((1, 2), 0.28529295325279236), ((0, 2), 0.2469872236251831), ((0, 3), 0.20299595594406128), ((1, 3), 0.16258859634399414)]
+******* MERGING 1 pair(s) *******
+  merging subspaces 0 (size 4) and 1 (size 4) - MI: 0.4483 > threshold 0.04
+******* after merging: 3 subspaces with sizes [8, 4, 4]
+{'R_grad_norm': 0.09615032874047756, 'training_loss': 0.11477780550718307}
+{'R_grad_norm': 0.09473521776497364, 'training_loss': 0.1139139537140727}
+{'R_grad_norm': 0.09537971414625644, 'training_loss': 0.11452388864010572}
+{'R_grad_norm': 0.09560940064489841, 'training_loss': 0.11348691876977682}
+{'R_grad_norm': 0.09596344396471977, 'training_loss': 0.11376321572810412}
+{'R_grad_norm': 0.09694156806915999, 'training_loss': 0.11352109968662262}
+{'R_grad_norm': 0.09622206334024667, 'training_loss': 0.11325638715177774}
+{'R_grad_norm': 0.09513420064002276, 'training_loss': 0.11309747718274593}
+{'R_grad_norm': 0.09496461227536201, 'training_loss': 0.11255875717848539}
+{'R_grad_norm': 0.09443260680884123, 'training_loss': 0.11245223663747311}
+eval result tensor([0.0582, 0.0246, 0.0312])
+computing merge metric
+normed mi [((1, 2), 0.39884060621261597), ((0, 1), 0.22230887413024902), ((0, 2), 0.16753780841827393)]
+******* MERGING 1 pair(s) *******
+  merging subspaces 1 (size 4) and 2 (size 4) - MI: 0.3988 > threshold 0.04
+******* after merging: 2 subspaces with sizes [8, 8]
+{'R_grad_norm': 0.10127591088414192, 'training_loss': 0.21310520492494106}
+{'R_grad_norm': 0.09906757593154908, 'training_loss': 0.21184506081044674}
+{'R_grad_norm': 0.09917921975255012, 'training_loss': 0.210563735216856}
+{'R_grad_norm': 0.10144424606114626, 'training_loss': 0.21101486712694167}
+{'R_grad_norm': 0.0981055674701929, 'training_loss': 0.21017291501164437}
+{'R_grad_norm': 0.10084815375506878, 'training_loss': 0.21060992650687693}
+{'R_grad_norm': 0.10066584751009941, 'training_loss': 0.2105617357045412}
+{'R_grad_norm': 0.09791771501302719, 'training_loss': 0.2104647433012724}
+{'R_grad_norm': 0.09907347779721022, 'training_loss': 0.2099544771015644}
+{'R_grad_norm': 0.09939034793525935, 'training_loss': 0.2099956038594246}
+******* STOPPING: reached target of 2 subspace(s) (currently 2 subspaces with sizes [8, 8])
+******* FINISHED early at step 14000: no more merges possible (all MI values below threshold 0.04)
+evaluating (25 steps)...
+ ******* eval result *******
+mean (weighted) 0.08607286959886551
+mean (unweighted) 0.08607286959886551
+tensor([0.1137, 0.0585])

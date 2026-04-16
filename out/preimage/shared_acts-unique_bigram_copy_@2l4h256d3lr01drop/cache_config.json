@@ -1,0 +1,38 @@
+{
+    "model_name": "unique_bigram_copy_@2l4h256d3lr01drop",
+    "dataset_config": {
+        "type": "unique_ngram_pattern",
+        "vocabulary": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15"
+        ],
+        "n": 2,
+        "separator": "<sep>",
+        "max_pattern_length": 50,
+        "min_pattern_length": 2,
+        "iterable": true,
+        "length": 2000,
+        "buffer_size": 1000,
+        "mask_first_repetition": true,
+        "use_only_n_unique_tokens_per_pattern": null,
+        "token_separator": " "
+    },
+    "act_sites": [
+        "blocks.0.hook_resid_post",
+        "blocks.0.hook_resid_mid"
+    ]
+}
