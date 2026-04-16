@@ -282,6 +282,7 @@ class UniqueNgramPatternConfig(DatasetConfig):
     buffer_size: int = 1000
     mask_first_repetition: bool = False
     use_only_n_unique_tokens_per_pattern: int | None = None
+    token_separator: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize config to a dictionary."""
@@ -297,6 +298,7 @@ class UniqueNgramPatternConfig(DatasetConfig):
             "buffer_size": self.buffer_size,
             "mask_first_repetition": self.mask_first_repetition,
             "use_only_n_unique_tokens_per_pattern": self.use_only_n_unique_tokens_per_pattern,
+            "token_separator": self.token_separator,
         }
 
     @classmethod
@@ -316,6 +318,7 @@ class UniqueNgramPatternConfig(DatasetConfig):
             use_only_n_unique_tokens_per_pattern=config_data.get(
                 "use_only_n_unique_tokens_per_pattern", None
             ),
+            token_separator=config_data.get("token_separator", ""),
         )
 
     def create_dataset(self) -> Union[IterableDataset, Dataset]:
@@ -334,6 +337,7 @@ class UniqueNgramPatternConfig(DatasetConfig):
                 buffer_size=self.buffer_size,
                 mask_first_repetition=self.mask_first_repetition,
                 use_only_n_unique_tokens_per_pattern=self.use_only_n_unique_tokens_per_pattern,
+                token_separator=self.token_separator,
             )
         else:
             # Finite length
@@ -354,6 +358,7 @@ class UniqueNgramPatternConfig(DatasetConfig):
                     separator=self.separator,
                     mask_first_repetition=self.mask_first_repetition,
                     use_only_n_unique_tokens_per_pattern=self.use_only_n_unique_tokens_per_pattern,
+                    token_separator=self.token_separator,
                 )
             else:
                 from copy_transformer.data import UniqueNgramPatternDataset
@@ -367,6 +372,7 @@ class UniqueNgramPatternConfig(DatasetConfig):
                     separator=self.separator,
                     mask_first_repetition=self.mask_first_repetition,
                     use_only_n_unique_tokens_per_pattern=self.use_only_n_unique_tokens_per_pattern,
+                    token_separator=self.token_separator,
                 )
 
 

@@ -413,6 +413,112 @@ def random_ngram_pattern(
     return "".join(full_string_chars[start_pos : start_pos + target_length])
 
 
+def random_ngram_pattern_tokens(
+    vocabulary: list[str],
+    n: int,
+    max_length: int,
+    min_length: int = 2,
+    use_only_n_unique_tokens: int | None = None,
+) -> list[str]:
+    """Like random_ngram_pattern but supports multi-character vocabulary items.
+
+    Uses tuples as prefix keys instead of concatenated strings, so vocabulary
+    items like "10", "15" are handled correctly.
+
+    Returns:
+        List of token strings (not joined), e.g. ["3", "7", "10", "5"].
+    """
+    if n < 1:
+        raise ValueError(f"n ({n}) must be at least 1.")
+    if min_length < n:
+        raise ValueError(f"min_length ({min_length}) must be at least n ({n}).")
+    if min_length > max_length:
+        raise ValueError(
+            f"min_length ({min_length}) cannot be larger than max_length ({max_length})."
+        )
+
+    if use_only_n_unique_tokens is not None:
+        if use_only_n_unique_tokens > len(vocabulary):
+            raise ValueError(
+                f"use_only_n_unique_tokens ({use_only_n_unique_tokens}) cannot be larger "
+                f"than the vocabulary size ({len(vocabulary)})."
+            )
+        if use_only_n_unique_tokens < 1:
+            raise ValueError("use_only_n_unique_tokens must be at least 1.")
+        vocab = list(
+            np.random.choice(vocabulary, size=use_only_n_unique_tokens, replace=False)
+        )
+    else:
+        vocab = list(vocabulary)
+
+    target_length = np.random.randint(min_length, max_length + 1)
+    N = len(vocab)
+    num_ngrams_needed = target_length - (n - 1)
+    max_ngrams = N**n
+
+    if num_ngrams_needed > max_ngrams:
+        raise ValueError(
+            f"Cannot generate unique {n}-gram pattern of length {target_length}: "
+            f"need {num_ngrams_needed} unique n-grams but only {max_ngrams} exist "
+            f"with vocabulary of size {N}."
+        )
+
+    if target_length == 0:
+        return []
+    if target_length < n:
+        return [vocab[np.random.randint(N)] for _ in range(target_length)]
+
+    # Build de Bruijn graph with tuple prefixes
+    from itertools import product as iter_product
+
+    if n == 1:
+        prefixes = [()]
+    else:
+        prefixes = list(iter_product(vocab, repeat=n - 1))
+
+    adj: dict[tuple, list[tuple]] = {}
+    for prefix in prefixes:
+        extensions = []
+        for token in vocab:
+            suffix = prefix[1:] + (token,) if n > 1 else ()
+            extensions.append(suffix)
+        np.random.shuffle(extensions)
+        adj[prefix] = extensions
+
+    start = prefixes[np.random.randint(len(prefixes))]
+
+    # Hierholzer's algorithm (same logic, works with any hashable type)
+    stack = [start]
+    circuit: list[tuple] = []
+    while stack:
+        v = stack[-1]
+        if adj[v]:
+            stack.append(adj[v].pop())
+        else:
+            circuit.append(stack.pop())
+    circuit.reverse()
+
+    if n == 1:
+        result = list(vocab)
+        np.random.shuffle(result)
+        return result[:target_length]
+
+    # Reconstruct token sequence from circuit of (n-1)-gram tuples
+    tokens = list(circuit[0])
+    for i in range(1, len(circuit)):
+        tokens.append(circuit[i][-1])
+
+    full_length = len(tokens)
+    if full_length < target_length:
+        raise ValueError(
+            f"Internal error: Eulerian circuit produced {full_length} tokens, "
+            f"need {target_length}."
+        )
+
+    start_pos = np.random.randint(0, full_length - target_length + 1)
+    return tokens[start_pos : start_pos + target_length]
+
+
 class UniqueNgramPatternDataset(torch.utils.data.Dataset):
     """Dataset generating sequences where a unique n-gram pattern repeats exactly once.
 
@@ -446,6 +552,7 @@ class UniqueNgramPatternDataset(torch.utils.data.Dataset):
         separator: str,
         mask_first_repetition: bool = False,
         use_only_n_unique_tokens_per_pattern: int | None = None,
+        token_separator: str = "",
     ):
         if use_only_n_unique_tokens_per_pattern is not None:
             if use_only_n_unique_tokens_per_pattern > len(vocabulary):
@@ -456,22 +563,35 @@ class UniqueNgramPatternDataset(torch.utils.data.Dataset):
 
         self.separator = separator
         self.mask_first_repetition = mask_first_repetition
+        self.token_separator = token_separator
         self.data: list[dict[str, Any] | str] = []
 
         for _ in range(num_samples):
-            pattern = random_ngram_pattern(
-                vocabulary,
-                n,
-                max_pattern_length,
-                min_pattern_length,
-                use_only_n_unique_tokens=use_only_n_unique_tokens_per_pattern,
-            )
-            # Insert separator between repetitions: pattern + separator + pattern
-            sequence = pattern + separator + pattern
+            if token_separator:
+                pattern_tokens = random_ngram_pattern_tokens(
+                    vocabulary,
+                    n,
+                    max_pattern_length,
+                    min_pattern_length,
+                    use_only_n_unique_tokens=use_only_n_unique_tokens_per_pattern,
+                )
+                all_tokens = pattern_tokens + [separator] + pattern_tokens
+                sequence = token_separator.join(all_tokens)
+                pattern_len = len(pattern_tokens)
+            else:
+                pattern = random_ngram_pattern(
+                    vocabulary,
+                    n,
+                    max_pattern_length,
+                    min_pattern_length,
+                    use_only_n_unique_tokens=use_only_n_unique_tokens_per_pattern,
+                )
+                sequence = pattern + separator + pattern
+                pattern_len = len(pattern)
 
             if mask_first_repetition:
                 # Mask: 0 for first occurrence + separator, 1 for second occurrence
-                mask = [0] * (len(pattern) + 1) + [1] * len(pattern)
+                mask = [0] * (pattern_len + 1) + [1] * pattern_len
                 self.data.append({"text": sequence, "mask": mask})
             else:
                 self.data.append(sequence)
@@ -496,6 +616,7 @@ class IterableUniqueNgramPatternDataset(IterableDatasetWrapper):
         separator: str,
         mask_first_repetition: bool = False,
         use_only_n_unique_tokens_per_pattern: int | None = None,
+        token_separator: str = "",
     ):
         super().__init__(
             UniqueNgramPatternDataset(
@@ -507,6 +628,7 @@ class IterableUniqueNgramPatternDataset(IterableDatasetWrapper):
                 separator,
                 mask_first_repetition,
                 use_only_n_unique_tokens_per_pattern,
+                token_separator,
             )
         )
 
@@ -524,6 +646,7 @@ class InfiniteUniqueNgramPatternDataset(InfiniteBufferedDataset):
         buffer_size: int = 1000,
         mask_first_repetition: bool = False,
         use_only_n_unique_tokens_per_pattern: int | None = None,
+        token_separator: str = "",
     ):
         if use_only_n_unique_tokens_per_pattern is not None:
             if use_only_n_unique_tokens_per_pattern > len(vocabulary):
@@ -539,21 +662,35 @@ class InfiniteUniqueNgramPatternDataset(InfiniteBufferedDataset):
         self.separator = separator
         self.mask_first_repetition = mask_first_repetition
         self.use_only_n_unique_tokens_per_pattern = use_only_n_unique_tokens_per_pattern
+        self.token_separator = token_separator
         super().__init__(buffer_size)
 
     def generate_sample(self) -> dict[str, Any] | str:
-        pattern = random_ngram_pattern(
-            self.vocabulary,
-            self.n,
-            self.max_pattern_length,
-            self.min_pattern_length,
-            use_only_n_unique_tokens=self.use_only_n_unique_tokens_per_pattern,
-        )
-        # Insert separator between repetitions: pattern + separator + pattern
-        sequence = pattern + self.separator + pattern
+        if self.token_separator:
+            pattern_tokens = random_ngram_pattern_tokens(
+                self.vocabulary,
+                self.n,
+                self.max_pattern_length,
+                self.min_pattern_length,
+                use_only_n_unique_tokens=self.use_only_n_unique_tokens_per_pattern,
+            )
+            all_tokens = pattern_tokens + [self.separator] + pattern_tokens
+            sequence = self.token_separator.join(all_tokens)
+            pattern_len = len(pattern_tokens)
+        else:
+            pattern = random_ngram_pattern(
+                self.vocabulary,
+                self.n,
+                self.max_pattern_length,
+                self.min_pattern_length,
+                use_only_n_unique_tokens=self.use_only_n_unique_tokens_per_pattern,
+            )
+            sequence = pattern + self.separator + pattern
+            pattern_len = len(pattern)
+
         if self.mask_first_repetition:
             return {
                 "text": sequence,
-                "mask": [0] * (len(pattern) + 1) + [1] * len(pattern),
+                "mask": [0] * (pattern_len + 1) + [1] * pattern_len,
             }
         return sequence

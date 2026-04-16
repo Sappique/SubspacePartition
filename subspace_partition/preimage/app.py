@@ -305,16 +305,16 @@ def change_key_value(key, options, increment):
 
 
 def process_special_tokens(tokens):
-    special_tokens = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-        " ": "&nbsp;",
-    }  # now replace whole word, might need to replace every occurrence in each token
-    # return ["&nbsp;" if t == " " else t for t in tokens]
-    return [special_tokens.get(t, t.replace("\n", "\\n")) for t in tokens]
+    def escape_token(t):
+        t = t.replace("&", "&amp;")
+        t = t.replace("<", "&lt;")
+        t = t.replace(">", "&gt;")
+        t = t.replace('"', "&quot;")
+        t = t.replace("'", "&#39;")
+        t = t.replace(" ", "&nbsp;")
+        t = t.replace("\n", "\\n")
+        return t
+    return [escape_token(t) for t in tokens]
 
 
 @st.cache_data
@@ -432,6 +432,43 @@ def span_maker(token: str, mark: bool = False):
         return "<span>" + token + "</span>"
 
 
+def is_gpt2_style_tokenizer(model_name: str) -> bool:
+    """Check if a model uses GPT-2-style byte-level tokenization.
+
+    Returns False for models with simple token vocabularies (e.g. WhitespaceSplit
+    tokenizers) where tokens like "1" and "11" need visible delimiters.
+    """
+    try:
+        m = load_model(model_name)
+        pre_tok = m.tokenizer.backend_tokenizer.pre_tokenizer
+        return 'WhitespaceSplit' not in str(type(pre_tok))
+    except Exception:
+        return True  # default to GPT-2 style
+
+
+def format_tokens_for_display(str_tokens: list[str], model_name: str, readable_tokens: bool) -> list[str]:
+    """Format tokens for HTML display, handling both GPT-2 and simple tokenizers."""
+    if is_gpt2_style_tokenizer(model_name):
+        if readable_tokens:
+            str_tokens = more_readable_gpt2_tokens(str_tokens, gpt2_byte_decoder)
+        else:
+            str_tokens = list(
+                map(lambda x: x.replace("Ġ", " "), str_tokens)
+            )
+    else:
+        # For simple tokenizers (e.g. WhitespaceSplit), add a pipe delimiter
+        # so "1" and "11" are visually distinct: "|1|" vs "|11|"
+        # But display known special tokens in angle brackets (e.g. <bos>)
+        m = load_model(model_name)
+        special_token_ids = {}
+        for attr in ("bos_token", "eos_token", "sep_token", "pad_token", "unk_token"):
+            tok = getattr(m.tokenizer, attr, None)
+            if tok is not None:
+                special_token_ids[tok] = f"<{attr.removesuffix('_token')}>"
+        str_tokens = [special_token_ids.get(t, f"|{t}") for t in str_tokens]
+    return process_special_tokens(str_tokens)
+
+
 index_path = Path(args.index_path)
 model_name_site_name = [d.split("-") for d in os.listdir(index_path)]
 if len(set(n[0] for n in model_name_site_name)) == 1:
@@ -523,7 +560,14 @@ if show_attention:
     st.markdown("##### Attention Patterns")
     model = load_model(model_name)
     try:
-        prompt = "".join(str_tokens)
+        # Use space-joining for tokenizers that need it (e.g. WhitespaceSplit),
+        # fall back to direct concatenation for GPT-2-style byte-level tokenizers.
+        if hasattr(model.tokenizer, 'backend_tokenizer') and \
+           hasattr(model.tokenizer.backend_tokenizer, 'pre_tokenizer') and \
+           'WhitespaceSplit' in str(type(model.tokenizer.backend_tokenizer.pre_tokenizer)):
+            prompt = " ".join(str_tokens)
+        else:
+            prompt = "".join(str_tokens)
         current_layer = int(sel_act_site.split(".")[0][1:])
         attention_patterns = compute_attention_patterns(model, prompt, current_layer)
         html = cv.attention.attention_patterns(str_tokens, attention_patterns[0])
@@ -544,14 +588,7 @@ if futr_ctx != "inf":
 else:
     span_e = seq_len
 str_tokens = str_tokens[span_s:span_e]
-if readable_tokens:
-    str_tokens = more_readable_gpt2_tokens(str_tokens, gpt2_byte_decoder)
-else:
-    str_tokens = list(
-        map(lambda x: x.replace("Ġ", " "), str_tokens)
-    )  # if x != "<|endoftext|>" else "[bos]"
-print(str_tokens)
-str_tokens = process_special_tokens(str_tokens)
+str_tokens = format_tokens_for_display(str_tokens, model_name, readable_tokens)
 
 if show_norm:
     norm = norms[act_idx, int(sel_subspace.split("-")[0])].item()
@@ -596,13 +633,7 @@ for sim, input_idx in sorted(zip(D, I), key=lambda x: x[0], reverse=cosine):
     else:
         span_e = seq_len
     str_tokens = str_tokens[span_s:span_e]
-    if readable_tokens:
-        str_tokens = more_readable_gpt2_tokens(str_tokens, gpt2_byte_decoder)
-    else:
-        str_tokens = list(
-            map(lambda x: x.replace("Ġ", " "), str_tokens)
-        )  # if x != "<|endoftext|>" else "[bos]"
-    str_tokens = process_special_tokens(str_tokens)
+    str_tokens = format_tokens_for_display(str_tokens, model_name, readable_tokens)
 
     shown_value = f"<span><i> {'sim' if cosine else 'dist'}: {sim:.3f} ; {norm}pos: {pos_idx} ; </i></span>"
     spans = [span_maker(t, i == pos_idx - span_s) for i, t in enumerate(str_tokens)]
