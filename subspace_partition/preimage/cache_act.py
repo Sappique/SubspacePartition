@@ -94,7 +94,7 @@ def run_cache_act(
     if all(site.startswith("blocks.") for site in act_sites):
         stop_at_layer = (
             max(
-                int(re.findall(r"blocks\.(\d+)\.hook_resid_post", site)[0])
+                int(re.findall(r"blocks\.(\d+)\.", site)[0])
                 for site in act_sites
             )
             + 1
