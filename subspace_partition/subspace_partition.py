@@ -8,10 +8,11 @@ from matplotlib import pyplot as plt
 from collections import defaultdict
 from transformer_lens import HookedTransformerConfig
 from transformers import PreTrainedTokenizerBase
-from subspace_partition.dataset_configs import DatasetConfig, dataset_config_from_dict
+from infra.dataset_configs import DatasetConfig, dataset_config_from_dict
+from infra import OUT_DIR
 import json
 
-SUBSPACE_PARTITION_DIR = Path(__file__).parent.parent / "out" / "subspace_partition"
+SUBSPACE_PARTITION_DIR = OUT_DIR / "subspace_partition"
 
 
 @dataclass

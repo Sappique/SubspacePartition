@@ -2,7 +2,7 @@ import torch
 from typing import Literal
 
 import subspace_partition.model_configs
-from subspace_partition.dataset_configs import DatasetConfig
+from infra.dataset_configs import DatasetConfig
 
 
 def test_model_performance(

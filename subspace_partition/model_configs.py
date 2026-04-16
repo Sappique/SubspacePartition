@@ -8,10 +8,11 @@ from tokenizers import Tokenizer, models, pre_tokenizers
 from transformer_lens.pretrained.weight_conversions.gpt2 import convert_gpt2_weights
 import copy_transformer.tokenizer
 import copy_transformer.training
-import subspace_partition.serialization
-from subspace_partition.dataset_configs import UniqueNgramPatternConfig
+import infra.serialization
+from infra import OUT_DIR
+from infra.dataset_configs import UniqueNgramPatternConfig
 
-CUSTOM_MODELS_DIR = Path(__file__).parent.parent / "out" / "models"
+CUSTOM_MODELS_DIR = OUT_DIR / "models"
 
 # HuggingFace GPT2 models from lacoco-lab/decompiling_transformers.
 # Maps model name prefix to a dict defining the tokenizer vocab, HookedTransformerConfig kwargs,
@@ -187,7 +188,7 @@ def load_model(
         model_config = transformer_lens.HookedTransformerConfig(
             **json.load(
                 f,
-                object_hook=subspace_partition.serialization.hooked_transformer_config_decoder,
+                object_hook=infra.serialization.hooked_transformer_config_decoder,
             )
         )
 

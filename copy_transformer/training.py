@@ -4,11 +4,12 @@ from pathlib import Path
 from typing import Literal, Any
 from dataclasses import dataclass, field
 import torch
-import subspace_partition.serialization
+import infra.serialization
+from infra import OUT_DIR
 
 from transformers import PreTrainedTokenizerBase
 from transformer_lens import HookedTransformerConfig
-from subspace_partition.dataset_configs import DatasetConfig
+from infra.dataset_configs import DatasetConfig
 
 
 @dataclass
@@ -83,7 +84,7 @@ class TrainingConfig:
             dataset_config: Optional dataset config (overrides one in dict).
             validation_dataset_config: Optional validation dataset config.
         """
-        from subspace_partition.dataset_configs import dataset_config_from_dict
+        from infra.dataset_configs import dataset_config_from_dict
 
         # Reconstruct dataset configs
         if dataset_config is None:
@@ -126,7 +127,7 @@ def train_transformer(
     config: TrainingConfig,
     model_config: HookedTransformerConfig,
     tokenizer: PreTrainedTokenizerBase,
-    save_dir: Path = Path("out") / "models",
+    save_dir: Path = OUT_DIR / "models",
 ) -> torch.nn.Module:
     """Train a transformer using a TrainingConfig.
 
@@ -413,7 +414,7 @@ def save_model(
             model_config.to_dict(),
             f,
             indent=4,
-            cls=subspace_partition.serialization.HookedTransformerConfigEncoder,
+            cls=infra.serialization.HookedTransformerConfigEncoder,
         )
 
     # Save tokenizer

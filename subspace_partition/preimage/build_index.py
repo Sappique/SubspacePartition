@@ -11,14 +11,15 @@ import numpy as np
 import argparse
 from pathlib import Path
 from subspace_partition.preimage.utils import *
+from infra import OUT_DIR
 
 
 def run_build_index(
     experiment_name: str,
     distance_measure: Literal["euclidean", "cosine"] = "cosine",
-    output_dir: Path = Path("out/index"),
-    cached_acts_dir: Path = Path("out/preimage"),
-    trained_Rs_dir: Path = Path("out/subspace_partition"),
+    output_dir: Path = OUT_DIR / "index",
+    cached_acts_dir: Path = OUT_DIR / "preimage",
+    trained_Rs_dir: Path = OUT_DIR / "subspace_partition",
     overwrite_existing: bool = False,
 ):
     """Build index for subspace partition preimage search.

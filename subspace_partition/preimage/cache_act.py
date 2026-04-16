@@ -16,7 +16,8 @@ import random
 import numpy as np
 import json
 from transformers import GPT2LMHeadModel
-from subspace_partition.dataset_configs import DatasetConfig
+from infra.dataset_configs import DatasetConfig
+from infra import OUT_DIR
 
 
 def set_seed(seed):
@@ -30,7 +31,7 @@ def run_cache_act(
     model_name: str,
     dataset_config: DatasetConfig,
     act_sites: list[str],
-    output_dir: Path = Path("out/preimage"),
+    output_dir: Path = OUT_DIR / "preimage",
     max_in_memory: int = 10_000_000,
     batch_size: int = 32,
     override: bool = False,
